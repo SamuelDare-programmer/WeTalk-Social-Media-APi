@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     ALGORITHM: str
     REFRESH_TOKEN_EXPIRE_MINUTES: int
+    TUSKY_API_KEY: str
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore"

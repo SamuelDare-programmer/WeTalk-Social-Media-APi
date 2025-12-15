@@ -1,7 +1,10 @@
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi import Request
+from fastapi import Request, Depends
 from app.core.auth import utils
 from app.core import exceptions
+from .service import UserService
+
+user_service = UserService()
 
 
 class TokenBearer(HTTPBearer):
@@ -29,7 +32,6 @@ class TokenBearer(HTTPBearer):
 
         
         if token_data is None:
-            print(2)
             raise exceptions.InvalidToken()
         
         return token_data
@@ -42,7 +44,7 @@ class TokenBearer(HTTPBearer):
     def verify_token_data(self, token_data):
         raise NotImplementedError("Please override this method")
     
-class AccesTokenBearer(TokenBearer):
+class AccessTokenBearer(TokenBearer):
     def verify_token_data(self, token_data:dict):
         if token_data and token_data["refresh"]:
             raise exceptions.AccessToken()
@@ -51,3 +53,12 @@ class RefreshTokenBearer(TokenBearer):
     def verify_token_data(self, token_data:dict):
         if token_data and not token_data["refresh"]:
             raise exceptions.RefreshToken()
+        
+async def get_current_user(token_data: dict = Depends(AccessTokenBearer())):
+    print(token_data)
+    print()
+    print(token_data["sub"])
+    user = await user_service.get_user_by_id(token_data["sub"])
+    if not user:
+        raise exceptions.UserNotFoundException() 
+    return user

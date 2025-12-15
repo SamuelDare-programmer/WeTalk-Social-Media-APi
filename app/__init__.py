@@ -5,15 +5,17 @@ from beanie import init_beanie
 from app.core.config import settings
 # from app.core.db.database import get_database
 from app.core.auth.routes import router as auth_router
+from app.core.services.upload import router as upload_router
+from app.posts.routes import router as posts_router
 from app.core.exceptions import register_exceptions
-from app.core.db.models import UserModel
+from app.core.db.models import UserModel, PostModel
 
 version = "v1"
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # STARTUP
     client = AsyncMongoClient(settings.MONGODB_URL)
-    await init_beanie(database=client[settings.DB_NAME], document_models=[UserModel])
+    await init_beanie(database=client[settings.DB_NAME], document_models=[UserModel, PostModel])
     print("✅ MongoDB Connected")
     yield
     # SHUTDOWN
@@ -39,3 +41,9 @@ async def health_check():
     
 app.include_router(
     prefix=f"/api/{version}", router=auth_router)
+
+app.include_router(
+    prefix=f"/api/{version}", router=upload_router)
+
+app.include_router(
+    prefix=f"/api/{version}", router=posts_router)

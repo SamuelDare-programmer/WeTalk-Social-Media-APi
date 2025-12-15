@@ -1,7 +1,7 @@
 from typing import Optional
 from datetime import datetime
 from pydantic import BaseModel, EmailStr, Field, ConfigDict
-from beanie import Document, Indexed, PydanticObjectId 
+from beanie import Document, Indexed, Link
 
 
 class UserModel(Document):
@@ -18,3 +18,12 @@ class UserModel(Document):
     class Settings:
         name = "users"
 
+
+class PostModel(Document):
+    user: Link["UserModel"]
+    image_url: Optional[str] = None
+    caption: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.now)
+    likes: int = 0
+    class Settings:
+        name = "posts"

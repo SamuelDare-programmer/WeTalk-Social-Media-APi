@@ -27,6 +27,10 @@ class UserService:
         user = await UserModel.find_one({"$or": [{"email": identifier}, {"username": identifier}]})
         return user 
     
+    async def get_user_by_id(self, user_id: str):
+        user = await UserModel.get(user_id)
+        return user
+    
     async def authenticate_user(self, identifier: str, password: str) -> dict:
         # 1. Find User
         user = await self.get_user(identifier)
