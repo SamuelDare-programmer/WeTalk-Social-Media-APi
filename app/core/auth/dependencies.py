@@ -1,7 +1,7 @@
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import Request, Depends
 from app.core.auth import utils
-from app.core import exceptions
+from app.core import errors
 from .service import UserService
 
 user_service = UserService()
@@ -19,8 +19,8 @@ class TokenBearer(HTTPBearer):
 
         
         if not self.token_valid(token):
-            print(1)
-            raise exceptions.InvalidToken()
+            
+            raise errors.InvalidToken()
         
         self.verify_token_data(token_data)
 
@@ -32,7 +32,7 @@ class TokenBearer(HTTPBearer):
 
         
         if token_data is None:
-            raise exceptions.InvalidToken()
+            raise errors.InvalidToken()
         
         return token_data
         
@@ -47,18 +47,26 @@ class TokenBearer(HTTPBearer):
 class AccessTokenBearer(TokenBearer):
     def verify_token_data(self, token_data:dict):
         if token_data and token_data["refresh"]:
-            raise exceptions.AccessToken()
+            raise errors.AccessToken()
         
 class RefreshTokenBearer(TokenBearer):
     def verify_token_data(self, token_data:dict):
         if token_data and not token_data["refresh"]:
-            raise exceptions.RefreshToken()
+            raise errors.RefreshToken()
         
 async def get_current_user(token_data: dict = Depends(AccessTokenBearer())):
-    print(token_data)
-    print()
-    print(token_data["sub"])
     user = await user_service.get_user_by_id(token_data["sub"])
     if not user:
-        raise exceptions.UserNotFoundException() 
+        raise errors.UserNotFoundException() 
     return user
+
+# class RoleChecker:
+#     # def __init__(self, allowed_roles: list[str]):
+#     #     self.allowed_roles = allowed_roles
+
+#     async def __call__(self, current_user=Depends(get_current_user)):
+#         if current_user.is_verified != True:
+#             raise errors.EmailNotVerifiedException()
+#         return True
+    
+    

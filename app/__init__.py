@@ -7,8 +7,11 @@ from app.core.config import settings
 from app.core.auth.routes import router as auth_router
 from app.core.services.upload import router as upload_router
 from app.posts.routes import router as posts_router
-from app.core.exceptions import register_exceptions
+from app.core.errors import register_exceptions
 from app.core.db.models import UserModel, PostModel
+from fastapi.middleware.cors import CORSMiddleware
+from app.posts.routes import router as posts_router
+
 
 version = "v1"
 @asynccontextmanager
@@ -39,11 +42,22 @@ async def health_check():
     except Exception as e:
         return {"status": "error", "details": str(e)}
     
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # Or ["*"] for testing
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+    
 app.include_router(
     prefix=f"/api/{version}", router=auth_router)
 
 app.include_router(
     prefix=f"/api/{version}", router=upload_router)
+
+app.include_router(
+    prefix=f"/api/{version}", router=posts_router)
 
 app.include_router(
     prefix=f"/api/{version}", router=posts_router)

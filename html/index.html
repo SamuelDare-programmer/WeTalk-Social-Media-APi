@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tusky + FastAPI Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/tus-js-client@3.0.0/dist/tus.min.js"></script>
+    <style>
+        body { font-family: -apple-system, system-ui, sans-serif; max-width: 600px; margin: 2rem auto; padding: 0 1rem; }
+        .card { border: 1px solid #ddd; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .step { margin-bottom: 20px; padding: 10px; background: #f9f9f9; border-radius: 4px; }
+        .active { border-left: 4px solid #007bff; background: #eef6fc; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        #progress-container { display: none; margin-top: 10px; }
+        progress { width: 100%; height: 20px; }
+        pre { background: #333; color: #fff; padding: 10px; overflow-x: auto; border-radius: 4px; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+    <h1>Tusky + Walrus Upload Test</h1>
+
+    <div class="card">
+        <div id="step-1" class="step active">
+            <h3>1. Select Media</h3>
+            <input type="file" id="fileInput" />
+            <br><br>
+            <input type="text" id="captionInput" placeholder="Write a caption..." style="width: 100%; padding: 8px; box-sizing: border-box; margin-top: 5px;">
+        </div>
+
+        <div id="progress-container">
+            <label>Uploading to Walrus/Tusky...</label>
+            <progress id="progressBar" value="0" max="100"></progress>
+            <span id="percentage">0%</span>
+        </div>
+
+        <div id="logs" style="margin-top: 20px;">
+            <h3>Logs:</h3>
+            <pre id="logOutput">Waiting for user input...</pre>
+        </div>
+
+        <br>
+        <button id="uploadBtn" onclick="startUpload()">Start Upload & Post</button>
+    </div>
+
+    <script>
+        const API_BASE = "http://localhost:8000/api/v1"; // Your FastAPI URL
+
+        function log(message, data = null) {
+            const logEl = document.getElementById('logOutput');
+            const timestamp = new Date().toLocaleTimeString();
+            let text = `[${timestamp}] ${message}`;
+            if (data) text += `\n${JSON.stringify(data, null, 2)}`;
+            logEl.textContent = text + "\n-------------------\n" + logEl.textContent;
+            console.log(message, data);
+        }
+
+        async function startUpload() {
+            const fileInput = document.getElementById('fileInput');
+            const captionInput = document.getElementById('captionInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert("Please select a file first.");
+                return;
+            }
+
+            document.getElementById('uploadBtn').disabled = true;
+            document.getElementById('progress-container').style.display = 'block';
+
+            try {
+                // --- PHASE A: Request Upload URL ---
+                log("Step 1: Requesting upload URL from Backend...");
+                
+                // Determine type (simple mapping for demo)
+                const fileType = file.type.startsWith('video') ? 'video' : 'image';
+
+                const initResponse = await fetch(`${API_BASE}/media/request-upload`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        filename: file.name,
+                        file_type: fileType,
+                        size_bytes: file.size
+                    })
+                });
+
+                if (!initResponse.ok) throw new Error("Failed to init upload");
+                const initData = await initResponse.json();
+                
+                log("Backend returned Upload URL:", initData);
+                const { upload_url, internal_media_id } = initData;
+
+                // --- PHASE B: Perform TUS Upload ---
+                log("Step 2: Starting TUS Upload to Tusky.io...");
+
+                // Create a new tus upload
+                const upload = new tus.Upload(file, {
+                    // CRITICAL: We use 'uploadUrl' because we already have the specific location.
+                    // We do NOT use 'endpoint' here.
+                    uploadUrl: upload_url, 
+                    onError: function(error) {
+                        log("TUS Error:", error);
+                        alert("Upload failed: " + error);
+                        document.getElementById('uploadBtn').disabled = false;
+                    },
+                    onProgress: function(bytesUploaded, bytesTotal) {
+                        const percentage = ((bytesUploaded / bytesTotal) * 100).toFixed(2);
+                        document.getElementById('progressBar').value = percentage;
+                        document.getElementById('percentage').textContent = percentage + "%";
+                    },
+                    onSuccess: function() {
+                        log("Step 2 Complete: File uploaded to Tusky.");
+                        createPost(internal_media_id, captionInput.value);
+                    }
+                });
+
+                // Start the upload
+                upload.start();
+
+            } catch (error) {
+                log("Error:", error.message);
+                document.getElementById('uploadBtn').disabled = false;
+            }
+        }
+
+        async function createPost(mediaId, caption) {
+            try {
+                // --- PHASE C: Create Post ---
+                log("Step 3: Creating Post on Backend...");
+
+                const postResponse = await fetch(`${API_BASE}/posts`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        caption: caption,
+                        internal_media_id: mediaId
+                    })
+                });
+
+                if (!postResponse.ok) {
+                    const errText = await postResponse.text();
+                    throw new Error(`Server rejected post: ${errText}`);
+                }
+
+                const postData = await postResponse.json();
+                log("SUCCESS! Post Created:", postData);
+                alert("Post Created Successfully! Check logs for IDs.");
+
+            } catch (error) {
+                log("Phase C Failed:", error.message);
+                alert("Upload worked, but creating post failed. See logs.");
+            } finally {
+                document.getElementById('uploadBtn').disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

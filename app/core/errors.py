@@ -8,21 +8,34 @@ class WeTalkException(Exception):
 
     pass
 
+
+class UserNotUpdated(Exception):
+    """Exception raised when a user update operation fails."""
+
+    pass
+
+
 class AccessToken(WeTalkException):
     """Exception raised when an access token is used incorrectly."""
 
     pass
+
 
 class RefreshToken(WeTalkException):
     """Exception raised when a refresh token is used incorrectly."""
 
     pass
 
+
 class InvalidToken(WeTalkException):
     """Exception raised for invalid tokens."""
 
     pass
 
+class InvalidCredentials(WeTalkException):
+    """Exception raised for invalid user credentials."""
+
+    pass
 
 class UserNotFoundException(WeTalkException):
     """Exception raised when a user is not found."""
@@ -32,6 +45,12 @@ class UserNotFoundException(WeTalkException):
 
 class UserAlreadyExistsException(WeTalkException):
     """Exception raised when attempting to create a user that already exists."""
+
+    pass
+
+
+class EmailNotVerifiedException(WeTalkException):
+    """Exception raised when a user's email is not verified."""
 
     pass
 
@@ -80,6 +99,41 @@ def register_exceptions(app: FastAPI):
                 "message": "Invalid or expired token",
                 "error_code": "invalid_token",
                 "resolution": "Please login again or provide a valid token",
+            },
+        ),
+    )
+
+    app.add_exception_handler(
+        EmailNotVerifiedException,
+        create_exception_handler(
+            status_code=status.HTTP_403_FORBIDDEN,
+            initial_detail={
+                "message": "Email not verified",
+                "error_code": "email_not_verified",
+                "resolution": "Please verify your email to proceed",
+            },
+        ),
+    )
+
+    app.add_exception_handler(
+        UserNotUpdated,
+        create_exception_handler(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            initial_detail={
+                "message": "User update failed",
+                "error_code": "user_not_updated",
+                "resolution": "Check the provided data and try again",
+            },
+        ),
+    )
+    app.add_exception_handler(
+        InvalidCredentials,
+        create_exception_handler(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            initial_detail={
+                "message": "Invalid credentials",
+                "error_code": "invalid_credentials",
+                "resolution": "Please check your username and password",
             },
         ),
     )

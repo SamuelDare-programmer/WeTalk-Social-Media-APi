@@ -14,7 +14,14 @@ class UserCreateModel(BaseModel):
     bio: Optional[str] = None
     avatar_url: Optional[str] = None
 
-
+class UserUpdateModel(BaseModel):
+    username: str
+    email: EmailStr
+    first_name: Optional[str]
+    middle_name: Optional[str]
+    last_name: Optional[str]
+    bio: Optional[str] = None
+    avatar_url: Optional[str] = None
 class UserPublicModel(BaseModel):
  
     id: PydanticObjectId = Field(alias="_id")
@@ -32,3 +39,7 @@ class UserPublicModel(BaseModel):
         arbitrary_types_allowed=True,
         json_encoders={PydanticObjectId: str} 
     )
+
+class PasswordResetModel(BaseModel):
+    email: EmailStr
+    new_password: str

@@ -4,6 +4,7 @@ from app.core.config import settings
 import uuid
 from datetime import datetime, timedelta
 import logging
+from itsdangerous import URLSafeTimedSerializer
 
 # Initialize Password Hasher
 pwd_context = PasswordHash.recommended()
@@ -19,7 +20,7 @@ def create_access_token(data: dict, expiry: timedelta | None = None, refresh: bo
     payload = data.copy() 
 
     # 2. Add Expiration
-    expire = datetime.utcnow() + (expiry if expiry else timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
+    expire = datetime.now() + (expiry if expiry else timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
     payload.update({"exp": expire})
 
     # 3. Add JTI (Unique Identifier for the token)
@@ -48,3 +49,26 @@ def decode_access_token(token: str) -> dict | None:
     except jwt.PyJWTError as e:
         logging.exception(e)
         return None
+    
+def google_sub_to_uuid(google_sub: str) -> uuid.UUID:
+    """Convert Google sub to deterministic UUID using namespace"""
+    # Use a namespace UUID from settings
+    GOOGLE_NAMESPACE = uuid.UUID(settings.google_namespace_uuid)
+    
+    # Generate UUID5 from Google sub
+    return uuid.uuid5(GOOGLE_NAMESPACE, google_sub)
+
+serializer = URLSafeTimedSerializer(secret_key=settings.SECRET_KEY, salt=settings.URL_SAFE_SERIALIZER_SALT)
+
+def create_url_safe_token(data:dict):
+    token = serializer.dumps(data)
+
+    return token
+
+def decode_url_safe_token(token:str):
+    try:
+        token_details = serializer.loads(token, max_age=1800)
+        return token_details
+    except Exception as e:
+        logging.error(str(e))
+
