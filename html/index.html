@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tusky + FastAPI Test</title>
-    <script src="https://cdn.jsdelivr.net/npm/tus-js-client@3.0.0/dist/tus.min.js"></script>
+    <title>Walrus Proxy Upload + FastAPI</title>
     <style>
         body { font-family: -apple-system, system-ui, sans-serif; max-width: 600px; margin: 2rem auto; padding: 0 1rem; }
         .card { border: 1px solid #ddd; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
@@ -19,7 +18,7 @@
 </head>
 <body>
 
-    <h1>Tusky + Walrus Upload Test</h1>
+    <h1>Walrus Proxy Upload Test</h1>
 
     <div class="card">
         <div id="step-1" class="step active">
@@ -30,7 +29,7 @@
         </div>
 
         <div id="progress-container">
-            <label>Uploading to Walrus/Tusky...</label>
+            <label>Uploading to Walrus (via Backend Proxy)...</label>
             <progress id="progressBar" value="0" max="100"></progress>
             <span id="percentage">0%</span>
         </div>
@@ -45,7 +44,7 @@
     </div>
 
     <script>
-        const API_BASE = "http://localhost:8000/api/v1"; // Your FastAPI URL
+        const API_BASE = "http://localhost:8000/api/v1/posts"; 
 
         function log(message, data = null) {
             const logEl = document.getElementById('logOutput');
@@ -68,12 +67,14 @@
 
             document.getElementById('uploadBtn').disabled = true;
             document.getElementById('progress-container').style.display = 'block';
+            document.getElementById('progressBar').removeAttribute('value'); 
+            document.getElementById('percentage').textContent = "Uploading...";
 
             try {
                 // --- PHASE A: Request Upload URL ---
                 log("Step 1: Requesting upload URL from Backend...");
                 
-                // Determine type (simple mapping for demo)
+                // Use lowercase 'image' or 'video' to match Pydantic Enum
                 const fileType = file.type.startsWith('video') ? 'video' : 'image';
 
                 const initResponse = await fetch(`${API_BASE}/media/request-upload`, {
@@ -86,56 +87,96 @@
                     })
                 });
 
-                if (!initResponse.ok) throw new Error("Failed to init upload");
+                if (!initResponse.ok) {
+                    const errorText = await initResponse.text();
+                    throw new Error(`Init Failed: ${errorText}`);
+                }
                 const initData = await initResponse.json();
                 
-                log("Backend returned Upload URL:", initData);
-                const { upload_url, internal_media_id } = initData;
+                log("Backend returned IDs:", initData);
+                const { internal_media_id } = initData;
 
-                // --- PHASE B: Perform TUS Upload ---
-                log("Step 2: Starting TUS Upload to Tusky.io...");
+                // --- PHASE B: Proxy Upload ---
+                log("Step 2: Uploading via Backend Proxy...");
 
-                // Create a new tus upload
-                const upload = new tus.Upload(file, {
-                    // CRITICAL: We use 'uploadUrl' because we already have the specific location.
-                    // We do NOT use 'endpoint' here.
-                    uploadUrl: upload_url, 
-                    onError: function(error) {
-                        log("TUS Error:", error);
-                        alert("Upload failed: " + error);
-                        document.getElementById('uploadBtn').disabled = false;
-                    },
-                    onProgress: function(bytesUploaded, bytesTotal) {
-                        const percentage = ((bytesUploaded / bytesTotal) * 100).toFixed(2);
-                        document.getElementById('progressBar').value = percentage;
-                        document.getElementById('percentage').textContent = percentage + "%";
-                    },
-                    onSuccess: function() {
-                        log("Step 2 Complete: File uploaded to Tusky.");
-                        createPost(internal_media_id, captionInput.value);
-                    }
+                const formData = new FormData();
+                formData.append("file", file);
+
+                const walrusResponse = await fetch(`${API_BASE}/media/proxy-upload/${internal_media_id}`, {
+                    method: 'PUT',
+                    body: formData 
                 });
 
-                // Start the upload
-                upload.start();
+                if (!walrusResponse.ok) {
+                    const err = await walrusResponse.text();
+                    throw new Error(`Proxy Upload Failed: ${err}`);
+                }
+
+                const walrusData = await walrusResponse.json();
+                log("Walrus Response:", walrusData);
+
+                // --- EXTRACT BLOB ID (Robust Logic) ---
+                let blobId;
+
+                // Check for explicit error from Proxy
+                if (walrusData.error) {
+                    throw new Error(`Walrus Error: ${walrusData.details || walrusData.error}`);
+                }
+
+                // Case 1: Standard "newlyCreated" -> blobObject -> blobId
+                if (walrusData.newlyCreated) {
+                    blobId = walrusData.newlyCreated.blobObject ? 
+                             walrusData.newlyCreated.blobObject.blobId : 
+                             walrusData.newlyCreated.blobId;
+                } 
+                // Case 2: Deduplication "alreadyCertified" -> blobId
+                else if (walrusData.alreadyCertified) {
+                    blobId = walrusData.alreadyCertified.blobId;
+                    log("Note: File already existed on Walrus (Deduplicated)");
+                }
+                // Case 3: Root-level blobId (Legacy/Proxy format)
+                else if (walrusData.blobId) {
+                    blobId = walrusData.blobId;
+                }
+                // Case 4: Root-level blobObject
+                else if (walrusData.blobObject && walrusData.blobObject.blobId) {
+                    blobId = walrusData.blobObject.blobId;
+                }
+                else {
+                    console.error("Unknown Response Structure:", walrusData);
+                    throw new Error("Could not find blobId. See console for details.");
+                }
+
+                log("Extracted Blob ID:", blobId);
+                
+                document.getElementById('progressBar').value = 100;
+                document.getElementById('percentage').textContent = "100%";
+
+                // --- PHASE C: Confirm with Backend ---
+                createPost(internal_media_id, blobId, captionInput.value);
 
             } catch (error) {
                 log("Error:", error.message);
+                alert("Error: " + error.message);
                 document.getElementById('uploadBtn').disabled = false;
             }
         }
 
-        async function createPost(mediaId, caption) {
+        async function createPost(internalId, blobId, caption) {
             try {
-                // --- PHASE C: Create Post ---
-                log("Step 3: Creating Post on Backend...");
+                log("Step 3: Creating Post...");
 
                 const postResponse = await fetch(`${API_BASE}/posts`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         caption: caption,
-                        internal_media_id: mediaId
+                        media: [ 
+                            {
+                                internal_media_id: internalId,
+                                walrus_blob_id: blobId
+                            }
+                        ] 
                     })
                 });
 
@@ -146,11 +187,11 @@
 
                 const postData = await postResponse.json();
                 log("SUCCESS! Post Created:", postData);
-                alert("Post Created Successfully! Check logs for IDs.");
+                alert("Post Created Successfully! ID: " + postData.id);
 
             } catch (error) {
                 log("Phase C Failed:", error.message);
-                alert("Upload worked, but creating post failed. See logs.");
+                alert("Creation failed. See logs.");
             } finally {
                 document.getElementById('uploadBtn').disabled = false;
             }

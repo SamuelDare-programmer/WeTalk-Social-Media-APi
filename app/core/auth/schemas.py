@@ -13,6 +13,7 @@ class UserCreateModel(BaseModel):
     last_name: str
     bio: Optional[str] = None
     avatar_url: Optional[str] = None
+    is_private: bool = False
 
 class UserUpdateModel(BaseModel):
     username: str
@@ -22,6 +23,7 @@ class UserUpdateModel(BaseModel):
     last_name: Optional[str]
     bio: Optional[str] = None
     avatar_url: Optional[str] = None
+    is_private: Optional[bool] = None
 class UserPublicModel(BaseModel):
  
     id: PydanticObjectId = Field(alias="_id")
@@ -31,6 +33,9 @@ class UserPublicModel(BaseModel):
     last_name: str
     bio: Optional[str] = None
     avatar_url: Optional[str] = None
+    is_private: bool
+    followers_count: int
+    following_count: int
     created_at: datetime
 
     model_config = ConfigDict(

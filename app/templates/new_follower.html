@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>New Follower</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6;">
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2>Hi {{ username }},</h2>
+        
+        <p>You have a new follower on WeTalk!</p>
+        
+        <p><strong>{{ follower_name }}</strong> (@{{ follower_username }}) is now following you.</p>
+        
+        <p>
+            <a href="{{ profile_url }}" style="background-color: #0095f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">View Profile</a>
+        </p>
+    </div>
+</body>
+</html>

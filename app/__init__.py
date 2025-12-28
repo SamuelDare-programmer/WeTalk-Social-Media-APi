@@ -2,23 +2,28 @@ from fastapi import FastAPI, Depends
 from contextlib import asynccontextmanager
 from pymongo import AsyncMongoClient
 from beanie import init_beanie
-from app.core.config import settings
+from app.core.config import settings, configure_cloudinary
 # from app.core.db.database import get_database
 from app.core.auth.routes import router as auth_router
-from app.core.services.upload import router as upload_router
+# from app.core.services.upload import router as upload_router
 from app.posts.routes import router as posts_router
 from app.core.errors import register_exceptions
-from app.core.db.models import UserModel, PostModel
+from app.core.db.models import User, UserFollows, UserBlocks
+from app.posts.models import Post, Media
 from fastapi.middleware.cors import CORSMiddleware
 from app.posts.routes import router as posts_router
-
+from app.feed.routes import router as feed_router
+from app.following.routes import router as following_router
+# from app.main import router as main_router
 
 version = "v1"
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # STARTUP
+    configure_cloudinary()
+    print("✅ Cloudinary Configured Successfully")
     client = AsyncMongoClient(settings.MONGODB_URL)
-    await init_beanie(database=client[settings.DB_NAME], document_models=[UserModel, PostModel])
+    await init_beanie(database=client[settings.DB_NAME], document_models=[User, UserFollows, UserBlocks, Post, Media])
     print("✅ MongoDB Connected")
     yield
     # SHUTDOWN
@@ -37,7 +42,7 @@ register_exceptions(app)
 @app.get("/health")
 async def health_check():
     try:
-        await UserModel.count()
+        await User.count()
         return {"status": "ok"}
     except Exception as e:
         return {"status": "error", "details": str(e)}
@@ -54,7 +59,10 @@ app.include_router(
     prefix=f"/api/{version}", router=auth_router)
 
 app.include_router(
-    prefix=f"/api/{version}", router=upload_router)
+    prefix=f"/api/{version}", router=feed_router)
+
+app.include_router(
+    prefix=f"/api/{version}", router=following_router)
 
 app.include_router(
     prefix=f"/api/{version}", router=posts_router)

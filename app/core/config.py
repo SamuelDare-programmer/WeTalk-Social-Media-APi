@@ -1,5 +1,9 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from celery.schedules import crontab
+import cloudinary
+
+
 class Settings(BaseSettings):
     PROJECT_NAME: str
     MONGODB_URL: str
@@ -30,7 +34,12 @@ class Settings(BaseSettings):
     MAIL_SSL_TLS: bool
     USE_CREDENTIALS: bool = True
     VALIDATE_CERTS: bool = True
-    
+    WALRUS_PUBLISHER_URL : str
+    WALRUS_AGGREGATOR_URL : str
+    CLOUDINARY_CLOUD_NAME: str
+    CLOUDINARY_API_KEY: str
+    CLOUDINARY_API_SECRET: str
+
     model_config = SettingsConfigDict(
         env_file=".env",
         extra="ignore"
@@ -52,6 +61,15 @@ class Settings(BaseSettings):
         return f"redis://{self.REDIS_USERNAME}:{self.REDIS_PASSWORD}@{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
 
 settings = Settings()
+
+# Initialize Cloudinary Configuration once
+def configure_cloudinary():
+    cloudinary.config(
+        cloud_name=settings.CLOUDINARY_CLOUD_NAME,
+        api_key=settings.CLOUDINARY_API_KEY,
+        api_secret=settings.CLOUDINARY_API_SECRET,
+        secure=True
+    )
 
 # Celery Configuration
 # These variables are used by Celery when it loads config via config_from_object
@@ -81,3 +99,11 @@ worker_max_tasks_per_child = 1000
 broker_connection_retry_on_startup = True
 broker_connection_retry = True
 broker_connection_max_retries = 10
+
+# Beat Schedule
+beat_schedule = {
+    "cleanup-temp-files-hourly": {
+        "task": "app.core.services.celery_worker.cleanup_temp_files",
+        "schedule": crontab(minute="*/5"),  # Run every 5 minutes
+    }
+}

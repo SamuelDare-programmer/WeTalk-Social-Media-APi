@@ -1,60 +1,71 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field, ConfigDict
 from beanie import PydanticObjectId
-from ..core.auth.schemas import UserPublicModel
-from .services import MediaType
+from typing import List, Optional
 from datetime import datetime
-class PostCreate(BaseModel):
-    caption: str
-    image_url: str
 
-class PostPublic(BaseModel):
-    id: PydanticObjectId = Field(alias="_id")
-    user_id: str
-    image_url: str
-    caption: str
-    created_at: str
-    likes: int
-    user : UserPublicModel
 
-    model_config = ConfigDict(populate_by_name=True)
 
-class UploadRequest(BaseModel):
+# ==========================================
+# 1. Media Schemas
+# ==========================================
+
+class MediaResponse(BaseModel):
     """
-    Data required to initialize an upload with Tusky.
+    Returned after a successful file upload.
+    Frontend uses 'media_id' to create the post.
     """
-    filename: str = Field(..., description="The original name of the file being uploaded")
-    file_type: MediaType = Field(..., description="Type of media (image or video)")
-    size_bytes: int = Field(..., gt=0, description="Exact file size in bytes (Required for TUS protocol)")
+    media_id: str
+    view_link: str  # The public Google Drive view link
+    media_type: Optional[str] = None # e.g. "image/jpeg"
 
-# --- Phase A: Upload Response (Server -> Client) ---
+class ImageUploadResponse(BaseModel):
+    message: str
+    media_id: str
+    public_id: str
+    view_link: str
 
-class UploadResponse(BaseModel):
-    """
-    Data returned to the client so they can perform the upload.
-    """
-    internal_media_id: str = Field(..., description="The ID of the PENDING record in your MongoDB")
-    upload_url: str = Field(..., description="The direct TUS upload URL provided by Tusky")
-    tusky_file_id: str = Field(..., description="The unique file identifier from Tusky")
+class VideoUploadResponse(BaseModel):
+    message: str
+    media_id: str
 
-# --- Phase C: Create Post Request (Client -> Server) ---
+# ==========================================
+# 2. Post Request Schemas (Client -> Server)
+# ==========================================
 
 class CreatePostRequest(BaseModel):
     """
-    Data required to finalize the post. 
-    The client sends this AFTER they have successfully uploaded the file to 'upload_url'.
+    Payload to create a new post.
+    Expects the ID returned from the upload endpoint.
     """
-    caption: str = Field(..., min_length=1, max_length=2200)
-    internal_media_id: str = Field(..., description="The ID received in UploadResponse")
+    caption: Optional[str] = Field(None, max_length=2200)
+    media_ids: List[str] # We link the uploaded media by ID
+    # location: Optional[LocationData] = None
+    tags: List[str] = []
 
-# --- Phase C: Post Response (Server -> Client) ---
+# ==========================================
+# 3. Post Response Schemas (Server -> Client)
+# ==========================================
 
 class PostResponse(BaseModel):
     """
-    Confirmation that the post was created and media verified.
+    Standard response when a post is created or retrieved.
     """
-    message: str
-    post_id: str
-    media_status: str
+    id: str = Field(alias="_id")
+    owner_id: str
+    caption: Optional[str] = None
     
-    # Optional: You can include the full Post object here if you prefer
+    # We return the full Media object (or at least the URL) so the frontend can render it
+    media: List[MediaResponse] = [] 
+    
+    likes_count: int = 0
+    comments_count: int = 0
     created_at: datetime
+    
+    # Optional: If you want to expand the user details
+    # owner: Optional[UserPublicModel] = None
+
+    model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True, json_encoders={PydanticObjectId: str})
+
+class PostCreateResponse(BaseModel):
+    message: str = "Post created successfully"
+    post_id: str

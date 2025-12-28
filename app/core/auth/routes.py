@@ -1,9 +1,12 @@
-from fastapi import APIRouter, status, Depends
+from typing import List
+from fastapi import APIRouter, Query, status, Depends
 # from app.core.db.database import get_database
 from app.core.auth.schemas import UserCreateModel, UserPublicModel, PasswordResetModel
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.core.auth.service import UserService
+from app.posts.models import Post
+from app.posts.schemas import PostResponse
 from .dependencies import RefreshTokenBearer, get_current_user
 from fastapi.responses import JSONResponse, RedirectResponse
 from .schemas import UserUpdateModel
@@ -40,11 +43,11 @@ async def refresh_token(current_user=Depends(RefreshTokenBearer())):
         "token_type": "bearer"
         })
 
-@router.get("/me")
+@router.get("/me", response_model=UserPublicModel)
 async def current_user(current_user= Depends(get_current_user)):
     return current_user
 
-@router.put("/me")
+@router.put("/me", response_model=UserPublicModel)
 async def update_profile(user_data :UserUpdateModel,current_user = Depends(get_current_user)):
     updated_user = await user_service.update_user(user_data)
     return updated_user
@@ -89,3 +92,11 @@ async def confirm_password_reset(payload: PasswordResetModel):
     await user_service.complete_password_reset(payload)
     return JSONResponse(content={"message": "Password has been reset successfully."})
 
+@router.get("/users/{user_id}/posts", response_model=List[PostResponse])
+async def get_user_posts(
+    user_id: str,
+    limit: int = Query(12, le=50), # 12 is good for 3-column grids
+    offset: int = 0
+):
+    posts = await Post.find(Post.owner_id == user_id, sort=-Post.created_at, skip=offset, limit=limit, fetch_links=True)  
+    return posts

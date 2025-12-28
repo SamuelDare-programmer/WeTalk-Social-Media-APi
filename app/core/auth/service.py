@@ -1,11 +1,11 @@
 from app.core.auth import utils
 from app.core.auth.schemas import UserCreateModel, UserUpdateModel, PasswordResetModel
 from app.core.auth.utils import hash_password, verify_password, create_url_safe_token
-from app.core.db.models import UserModel
+from app.core.db.models import User
 from app.core.errors import UserAlreadyExistsException, UserNotFoundException,InvalidCredentials, UserNotUpdated, EmailNotVerifiedException
 from datetime import datetime
 
-from app.core.services.email import send_email_background
+from app.core.services.mail import send_email_background
 from ..config import settings
 import logging
 import beanie
@@ -16,7 +16,7 @@ templates = Jinja2Templates(directory="app/templates")
 class UserService:
     async def create_user(self, user: UserCreateModel):
         # FIX 1: Single, explicit query for collision detection
-        existing_user = await UserModel.find_one(
+        existing_user = await User.find_one(
             {"$or": [{"email": user.email}, {"username": user.username}]}
         )
         
@@ -26,7 +26,7 @@ class UserService:
         user_dict = user.model_dump()
         user_dict["password_hash"] = hash_password(user_dict.pop("password"))
         
-        new_user = UserModel(**user_dict)
+        new_user = User(**user_dict)
         await new_user.create()
         
         token = create_url_safe_token({"email": new_user.email, "uid": str(new_user.id)})
@@ -43,11 +43,11 @@ class UserService:
         
     async def get_user(self, identifier: str):
         # The correct Beanie/Mongo syntax
-        user = await UserModel.find_one({"$or": [{"email": identifier}, {"username": identifier}]})
+        user = await User.find_one({"$or": [{"email": identifier}, {"username": identifier}]})
         return user 
     
     async def get_user_by_id(self, user_id: str):
-        user = await UserModel.get(user_id)
+        user = await User.get(user_id)
         return user
     
     async def authenticate_user(self, identifier: str, password: str) -> dict:

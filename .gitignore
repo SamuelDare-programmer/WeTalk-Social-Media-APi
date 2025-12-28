@@ -1,3 +1,5 @@
 .env
 venv/
 __pycache__/
+google_credentials.json
+wetalk-uploader-bot-482516-9aa713317e9f.json

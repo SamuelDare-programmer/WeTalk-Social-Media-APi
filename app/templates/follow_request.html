@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>New Follow Request</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6;">
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2>Hi {{ username }},</h2>
+        
+        <p><strong>{{ follower_name }}</strong> (@{{ follower_username }}) has requested to follow you on WeTalk.</p>
+        
+        <p>Since your account is private, you need to approve this request before they can see your posts.</p>
+        
+        <p>
+            <a href="{{ action_url }}" style="background-color: #0095f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">View Request</a>
+        </p>
+        
+        <p style="color: #888; font-size: 12px; margin-top: 30px;">If you didn't expect this, you can ignore this email.</p>
+    </div>
+</body>
+</html>

@@ -6,3 +6,6 @@ python-multipart
 pyjwt
 passlib[bcrypt]
 email-validator
+celery
+redis
+cloudinary
