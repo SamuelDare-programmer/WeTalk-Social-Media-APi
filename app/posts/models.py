@@ -4,6 +4,7 @@ from enum import Enum
 
 from beanie import Document, Link
 from pydantic import BaseModel, Field
+from app.discovery.models import Location
 
 # --- Enums ---
 
@@ -55,7 +56,7 @@ class Post(Document):
     owner_id: str
     caption: Optional[str] = Field(None, max_length=2200)
     tags: List[str] = []
-    # location: Optional[LocationData] = None
+    location: Optional[Link[Location]] = None
     
     # List of media items (Good for carousels)
     media: List[Link[Media]] = [] 
@@ -63,6 +64,8 @@ class Post(Document):
     # Counters for fast feed generation
     likes_count: int = 0
     comments_count: int = 0
+    share_count: int = 0
+    original_post: Optional[Link["Post"]] = None
     
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)

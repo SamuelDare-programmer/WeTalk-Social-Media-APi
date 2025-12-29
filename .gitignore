@@ -3,3 +3,26 @@ venv/
 __pycache__/
 google_credentials.json
 wetalk-uploader-bot-482516-9aa713317e9f.json
+
+# Celery
+celerybeat-schedule*
+celerybeat.pid
+
+# Temporary uploads
+temp_uploads/
+
+# Logs
+*.log
+
+# Testing and Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDEs
+.vscode/
+.idea/
+
+# Byte-compiled / optimized / DLL files
+*.py[cod]
+*$py.class

@@ -3,16 +3,19 @@ from typing import List
 import uuid
 import shutil
 import os
+import asyncio
 # Import Schemas
 from .schemas import CreatePostRequest, PostResponse, ImageUploadResponse
 
 # Import Services
 from .services import PostService
 from app.core.media.service import MediaService
+from app.engagement.service import EngagementService
+from app.core.db.models import User
 
 # Import Auth
 # Assuming you have a get_current_user dependency that returns the user's Pydantic model or ID
-# from app.core.auth.dependencies import get_current_user 
+from app.core.auth.dependencies import get_current_user 
 
 router = APIRouter(prefix="/posts", tags=["posts"])
 
@@ -91,7 +94,8 @@ async def create_post_endpoint(
         ],
         likes_count=new_post.likes_count,
         comments_count=new_post.comments_count,
-        created_at=new_post.created_at
+        created_at=new_post.created_at,
+        location=new_post.location
     )
     
     return post_response
@@ -127,9 +131,65 @@ async def get_posts(
             ],
             likes_count=post.likes_count,
             comments_count=post.comments_count,
-            created_at=post.created_at
+            created_at=post.created_at,
+            location=post.location
         ) for post in posts
     ]
+
+@router.get("/user/{user_id}", response_model=List[PostResponse])
+async def get_user_posts(
+    user_id: str,
+    limit: int = Query(10, le=50),
+    offset: int = 0,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get a specific user's posts (Profile Feed).
+    Includes is_liked and is_bookmarked state for the current viewer.
+    """
+    post_service = PostService()
+    engagement_service = EngagementService()
+    
+    posts = await post_service.get_user_posts(user_id, limit, offset)
+    
+    # Collect IDs for batch fetching engagement status
+    # We also check original_post IDs to properly show state on shared posts
+    post_ids = [str(p.id) for p in posts]
+    original_ids = [str(p.original_post.id) for p in posts if p.original_post]
+    all_ids_to_check = list(set(post_ids + original_ids))
+    
+    # Parallel fetch of likes and bookmarks
+    liked_ids, bookmarked_ids = await asyncio.gather(
+        engagement_service.get_liked_post_ids(str(current_user.id), all_ids_to_check),
+        engagement_service.get_bookmarked_post_ids(str(current_user.id), all_ids_to_check)
+    )
+    
+    liked_set = set(liked_ids)
+    bookmarked_set = set(bookmarked_ids)
+    
+    def map_post(p):
+        return PostResponse(
+            id=str(p.id),
+            owner_id=p.owner_id,
+            caption=p.caption,
+            media=[
+                {
+                    "media_id": str(m.id),
+                    "view_link": m.view_link,
+                    "media_type": m.media_type
+                } for m in p.media
+            ] if p.media else [],
+            likes_count=p.likes_count,
+            comments_count=p.comments_count,
+            share_count=p.share_count,
+            created_at=p.created_at,
+            is_liked=str(p.id) in liked_set,
+            is_bookmarked=str(p.id) in bookmarked_set,
+            original_post=map_post(p.original_post) if p.original_post else None,
+            location=p.location
+        )
+
+    return [map_post(post) for post in posts]
 
 @router.get("/{post_id}", response_model=PostResponse)
 async def get_post(post_id: str):
@@ -149,7 +209,8 @@ async def get_post(post_id: str):
         ],
         likes_count=post.likes_count,
         comments_count=post.comments_count,
-        created_at=post.created_at
+        created_at=post.created_at,
+        location=post.location
     )
 
 @router.delete("/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -182,5 +243,6 @@ async def update_post(
         ],
         likes_count=updated_post.likes_count,
         comments_count=updated_post.comments_count,
-        created_at=updated_post.created_at
+        created_at=updated_post.created_at,
+        location=updated_post.location
     )

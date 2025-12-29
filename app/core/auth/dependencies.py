@@ -47,12 +47,12 @@ class TokenBearer(HTTPBearer):
 class AccessTokenBearer(TokenBearer):
     def verify_token_data(self, token_data:dict):
         if token_data and token_data["refresh"]:
-            raise errors.AccessToken()
+            raise errors.AccessTokenException()
         
 class RefreshTokenBearer(TokenBearer):
     def verify_token_data(self, token_data:dict):
         if token_data and not token_data["refresh"]:
-            raise errors.RefreshToken()
+            raise errors.RefreshTokenException()
         
 async def get_current_user(token_data: dict = Depends(AccessTokenBearer())):
     user = await user_service.get_user_by_id(token_data["sub"])

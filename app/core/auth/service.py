@@ -15,12 +15,12 @@ from ..services.celery_worker import send_email
 templates = Jinja2Templates(directory="app/templates")
 class UserService:
     async def create_user(self, user: UserCreateModel):
-        # FIX 1: Single, explicit query for collision detection
-        existing_user = await User.find_one(
+        # Rule 1: Projections - Use count() instead of fetching the document
+        existing_count = await User.find(
             {"$or": [{"email": user.email}, {"username": user.username}]}
-        )
+        ).count()
         
-        if existing_user:
+        if existing_count > 0:
              raise UserAlreadyExistsException()
         
         user_dict = user.model_dump()

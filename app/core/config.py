@@ -5,24 +5,19 @@ import cloudinary
 
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str
     MONGODB_URL: str
     DB_NAME: str
+    JTI_EXPIRY: int
     SECRET_KEY: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     ALGORITHM: str
     REFRESH_TOKEN_EXPIRE_MINUTES: int
-    JTI_EXPIRY : int
     REDIS_HOST: str
     REDIS_PORT: int
     DOMAIN_NAME: str
-    DECODE_RESPONSES: bool
     REDIS_USERNAME : str
     REDIS_PASSWORD: str
     REDIS_DB: int = 0  # Add Redis DB number
-    TUSKY_API_KEY: str
-    TUSKY_VAULT_ID : str
-    TUSKY_API_BASE: str
     MAIL_USERNAME: str
     MAIL_PASSWORD: str
     MAIL_FROM: str
@@ -34,11 +29,10 @@ class Settings(BaseSettings):
     MAIL_SSL_TLS: bool
     USE_CREDENTIALS: bool = True
     VALIDATE_CERTS: bool = True
-    WALRUS_PUBLISHER_URL : str
-    WALRUS_AGGREGATOR_URL : str
     CLOUDINARY_CLOUD_NAME: str
     CLOUDINARY_API_KEY: str
     CLOUDINARY_API_SECRET: str
+    RADAR_SECRET_KEY: str
 
     model_config = SettingsConfigDict(
         env_file=".env",

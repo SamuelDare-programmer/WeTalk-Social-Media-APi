@@ -40,6 +40,7 @@ class UserFollows(Document):
         name = "user_follows"
         indexes = [
             [("follower_id", 1), ("following_id", 1)],
+            [("following_id", 1)], # Rule 2: Index for "Get Followers" queries
         ]
 
 class UserBlocks(Document):

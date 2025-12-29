@@ -10,10 +10,14 @@ from app.posts.routes import router as posts_router
 from app.core.errors import register_exceptions
 from app.core.db.models import User, UserFollows, UserBlocks
 from app.posts.models import Post, Media
+from app.engagement.models import PostLike, Comment, Bookmark, CommentLike
 from fastapi.middleware.cors import CORSMiddleware
 from app.posts.routes import router as posts_router
 from app.feed.routes import router as feed_router
 from app.following.routes import router as following_router
+from app.engagement.routes import router as engagement_router
+from app.discovery.routes import router as discovery_router
+from app.discovery.models import Hashtag, PostTag, Location
 # from app.main import router as main_router
 
 version = "v1"
@@ -23,7 +27,7 @@ async def lifespan(app: FastAPI):
     configure_cloudinary()
     print("✅ Cloudinary Configured Successfully")
     client = AsyncMongoClient(settings.MONGODB_URL)
-    await init_beanie(database=client[settings.DB_NAME], document_models=[User, UserFollows, UserBlocks, Post, Media])
+    await init_beanie(database=client[settings.DB_NAME], document_models=[User, UserFollows, UserBlocks, Post, Media, PostLike, Comment, Bookmark, CommentLike, Hashtag, PostTag, Location])
     print("✅ MongoDB Connected")
     yield
     # SHUTDOWN
@@ -33,7 +37,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="WeTalk API",
-    description="Social media api for posting, liking commenting and resharing features",
+    description="Social media API for posting, engagement, user connections, and content discovery.",
     lifespan=lifespan
 )
 
@@ -65,7 +69,10 @@ app.include_router(
     prefix=f"/api/{version}", router=following_router)
 
 app.include_router(
-    prefix=f"/api/{version}", router=posts_router)
+    prefix=f"/api/{version}", router=engagement_router)
 
 app.include_router(
     prefix=f"/api/{version}", router=posts_router)
+
+app.include_router(
+    prefix=f"/api/{version}", router=discovery_router)

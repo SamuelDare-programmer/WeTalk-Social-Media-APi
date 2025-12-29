@@ -1,7 +1,8 @@
 import redis.asyncio as redis
 from ..config import settings
 
-JTI_EXPIRY = 3600
+JTI_EXPIRY = settings.JTI_EXPIRY
+
 
 # Use settings from config
 pool = redis.ConnectionPool(

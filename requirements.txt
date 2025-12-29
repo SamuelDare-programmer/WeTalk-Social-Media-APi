@@ -9,3 +9,10 @@ email-validator
 celery
 redis
 cloudinary
+httpx
+beanie
+pwdlib
+itsdangerous
+fastapi-mail
+pytest
+pytest-asyncio

@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field, ConfigDict
-from beanie import PydanticObjectId
 from typing import List, Optional
 from datetime import datetime
+from app.discovery.schemas import LocationResponse
 
 
 
@@ -40,6 +40,7 @@ class CreatePostRequest(BaseModel):
     caption: Optional[str] = Field(None, max_length=2200)
     media_ids: List[str] # We link the uploaded media by ID
     # location: Optional[LocationData] = None
+    location_id: Optional[str] = None
     tags: List[str] = []
 
 # ==========================================
@@ -59,12 +60,17 @@ class PostResponse(BaseModel):
     
     likes_count: int = 0
     comments_count: int = 0
+    share_count: int = 0
     created_at: datetime
+    is_bookmarked: bool = False
+    is_liked: bool = False
+    original_post: Optional["PostResponse"] = None
+    location: Optional[LocationResponse] = None
     
     # Optional: If you want to expand the user details
     # owner: Optional[UserPublicModel] = None
 
-    model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True, json_encoders={PydanticObjectId: str})
+    model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
 
 class PostCreateResponse(BaseModel):
     message: str = "Post created successfully"

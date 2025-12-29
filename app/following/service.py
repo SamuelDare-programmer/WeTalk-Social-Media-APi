@@ -1,10 +1,12 @@
-from fastapi import HTTPException
 from beanie import PydanticObjectId
 from app.core.db.models import User, UserFollows, UserBlocks, FollowStatus
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from app.core.services.celery_worker import send_email
 from app.core.config import settings
+import asyncio
+from pydantic import BaseModel, Field, ConfigDict
+from app.core.errors import SelfOperationException, UnauthorizedActionException, UserNotFoundException, RelationshipNotFoundException, PrivacyException, ContentValidationException
 
 class FollowService:
     async def follow_user(self, follower_id: str, target_user_id: str):
@@ -13,7 +15,7 @@ class FollowService:
         """
         # 1. Self-Check
         if follower_id == target_user_id:
-            raise HTTPException(status_code=400, detail="You cannot follow yourself.")
+            raise SelfOperationException("You cannot follow yourself.")
 
         # 2. Block Check
         # Check if a block exists in either direction (follower -> target OR target -> follower)
@@ -25,7 +27,7 @@ class FollowService:
         })
         
         if block_exists:
-            raise HTTPException(status_code=403, detail="Action forbidden.")
+            raise UnauthorizedActionException("Action forbidden.")
 
         # 3. Idempotency
         existing_follow = await UserFollows.find_one({
@@ -40,13 +42,14 @@ class FollowService:
             }
 
         # 4. Privacy Logic
-        target_user = await User.get(PydanticObjectId(target_user_id))
-        if not target_user:
-            raise HTTPException(status_code=404, detail="User not found.")
-
-        follower = await User.get(PydanticObjectId(follower_id))
-        if not follower:
-            raise HTTPException(status_code=404, detail="Follower not found.")
+        # Rule 3: Parallelism - Fetch both users simultaneously
+        target_user, follower = await asyncio.gather(
+            User.get(PydanticObjectId(target_user_id)),
+            User.get(PydanticObjectId(follower_id))
+        )
+        
+        if not target_user: raise UserNotFoundException("User not found.")
+        if not follower: raise UserNotFoundException("Follower not found.")
 
         if target_user.is_private:
             status = FollowStatus.PENDING
@@ -129,7 +132,7 @@ class FollowService:
         removed = await self._remove_relationship(follower_id, target_user_id)
 
         if not removed:
-            raise HTTPException(status_code=404, detail="Relationship not found.")
+            raise RelationshipNotFoundException("Relationship not found.")
 
         return {
             "status": "success",
@@ -141,7 +144,7 @@ class FollowService:
         Blocks a user and performs destructive cleanup of relationships.
         """
         if blocker_id == blocked_id:
-            raise HTTPException(status_code=400, detail="You cannot block yourself.")
+            raise SelfOperationException("You cannot block yourself.")
 
         # 1. Idempotency Check
         existing_block = await UserBlocks.find_one({
@@ -182,10 +185,10 @@ class FollowService:
         })
 
         if not follow_record:
-            raise HTTPException(status_code=404, detail="Follow request not found.")
+            raise RelationshipNotFoundException("Follow request not found.")
 
         if follow_record.status != FollowStatus.PENDING:
-            raise HTTPException(status_code=400, detail="This request is not pending.")
+            raise ContentValidationException("This request is not pending.")
 
         if action == "accept":
             follow_record.status = FollowStatus.ACTIVE
@@ -207,7 +210,7 @@ class FollowService:
             return {"status": "success", "relationship_status": "none"}
         
         else:
-            raise HTTPException(status_code=400, detail="Invalid action. Use 'accept' or 'decline'.")
+            raise ContentValidationException("Invalid action. Use 'accept' or 'decline'.")
 
     async def check_follow_status(self, follower_id: str, target_user_id: str) -> str:
         record = await UserFollows.find_one({
@@ -225,7 +228,7 @@ class FollowService:
             
         target_user = await User.get(PydanticObjectId(target_user_id))
         if not target_user:
-            raise HTTPException(status_code=404, detail="User not found.")
+            raise UserNotFoundException()
             
         if not target_user.is_private:
             return True
@@ -243,8 +246,19 @@ class FollowService:
         """
         Fetches user details and adds 'is_following_viewer' context.
         """
-        # 1. Fetch Users
-        users = await User.find({"_id": {"$in": [PydanticObjectId(uid) for uid in user_ids]}}).to_list()
+        # Rule 1: Projections - Fetch only what is needed for the UI card
+        class UserProjection(BaseModel):
+            id: PydanticObjectId = Field(alias="_id")
+            username: str
+            first_name: str
+            last_name: str
+            avatar_url: Optional[str] = None
+            model_config = ConfigDict(populate_by_name=True)
+
+        users = await User.find(
+            {"_id": {"$in": [PydanticObjectId(uid) for uid in user_ids]}}
+        ).project(UserProjection).to_list()
+        
         user_map = {str(u.id): u for u in users}
 
         # 2. "Follows You" Context: Check if these users follow the viewer
@@ -272,7 +286,7 @@ class FollowService:
 
     async def get_followers(self, target_user_id: str, current_user_id: str, limit: int = 20, cursor: str = None):
         if not await self._can_view_follows(target_user_id, current_user_id):
-            raise HTTPException(status_code=403, detail="This account is private.")
+            raise PrivacyException("This account is private.")
 
         query = {"following_id": target_user_id, "status": FollowStatus.ACTIVE}
         if cursor:
@@ -293,7 +307,7 @@ class FollowService:
 
     async def get_following(self, target_user_id: str, current_user_id: str, limit: int = 20, cursor: str = None):
         if not await self._can_view_follows(target_user_id, current_user_id):
-            raise HTTPException(status_code=403, detail="This account is private.")
+            raise PrivacyException("This account is private.")
 
         query = {"follower_id": target_user_id, "status": FollowStatus.ACTIVE}
         if cursor:
