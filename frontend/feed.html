@@ -72,8 +72,8 @@
                 <div id="story-tray" class="relative flex gap-2.5 overflow-x-auto pb-2 snap-x hide-scrollbar">
                     <div class="relative w-[84px] h-[140px] shrink-0 rounded-xl overflow-hidden bg-surface-dark group cursor-pointer border border-slate-200 dark:border-border-dark snap-start transition-all hover:brightness-110"
                         onclick="document.getElementById('story-upload-modal').classList.remove('hidden')">
-                        <div class="user-avatar-img h-[100px] bg-cover bg-center opacity-80 group-hover:opacity-100 transition-opacity"
-                            style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDmN--GurOq_D4B_62Y0vdpua86WB0kqhK_5TYANv0r83VjPSGodTEVUQ9szwRaM0b0gXYgD-n8ZH0ZBhglSGD2NZROMF0o9LtptFxMoitnPTWlWZvRnK5QOw0wgUaPaRdh_FsEdVH3iOJk9gBiBLiftEzQX9jGmw6HNmZl1dfVtt4ze3gN5acMnRLYMq0Wu7yH_VFgyFMyHWG730OleuiESdKx5ekH6pBzoDPbT4JqFilKWuYYkzOmAxleWIrzA3nedSY64iMFKJD0");'>
+                        <div id="story-tray-user-avatar"
+                            class="user-avatar-img h-[100px] bg-cover bg-center opacity-80 group-hover:opacity-100 transition-opacity">
                         </div>
                         <div
                             class="absolute bottom-0 w-full bg-surface-dark h-[40px] flex flex-col items-center pt-3.5 relative">
@@ -109,12 +109,14 @@
                 <!-- User Profile Summary -->
                 <div class="flex items-center gap-3 p-2">
                     <div class="size-12 rounded-full border-2 border-primary/20 p-0.5">
-                        <div class="user-avatar-img size-full rounded-full bg-cover bg-center"></div>
+                        <div id="sidebar-user-avatar" class="user-avatar-img size-full rounded-full bg-cover bg-center">
+                        </div>
                     </div>
-                    <div>
-                        <p id="profile-name-sidebar" class="font-bold text-sm text-slate-900 dark:text-white">Loading...
-                        </p>
-                        <p id="profile-username-sidebar" class="text-xs text-text-secondary">@username</p>
+                    <div class="flex-1 min-w-0">
+                        <p id="profile-name-sidebar" class="font-bold text-sm text-slate-900 dark:text-white truncate">
+                            Loading...</p>
+                        <p id="profile-username-sidebar" class="text-xs text-text-secondary truncate">@username</p>
+                        <p id="profile-bio-sidebar" class="text-[10px] text-text-secondary truncate mt-0.5 hidden"></p>
                     </div>
                     <button onclick="location.href='profile.html'"
                         class="ml-auto text-xs font-bold text-primary hover:text-indigo-400">Switch</button>

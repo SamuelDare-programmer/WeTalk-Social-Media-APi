@@ -894,17 +894,22 @@ async function checkAuth() {
     // Set Sidebar Profile
     const sidebarName = document.getElementById('profile-name-sidebar');
     const sidebarUser = document.getElementById('profile-username-sidebar');
-    const sidebarAvatar = document.querySelector('.user-avatar-img');
+    const sidebarAvatar = document.getElementById('sidebar-user-avatar');
+    const sidebarBio = document.getElementById('profile-bio-sidebar');
+    const storyTrayAvatar = document.getElementById('story-tray-user-avatar');
 
-    if (sidebarName) sidebarName.textContent = `${user.first_name} ${user.last_name}`;
+    if (sidebarName) sidebarName.textContent = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username;
     if (sidebarUser) sidebarUser.textContent = `@${user.username}`;
+    if (sidebarBio && user.bio) {
+        sidebarBio.textContent = user.bio;
+        sidebarBio.classList.remove('hidden');
+    }
+    const avatarUrl = user.avatar_url || user.profile_image || `https://ui-avatars.com/api/?name=${user.username}&background=random`;
     if (sidebarAvatar) {
-        const avatarUrl = user.avatar_url || user.profile_image || `https://ui-avatars.com/api/?name=${user.first_name}+${user.last_name}&background=random`;
-        if (sidebarAvatar.tagName === 'IMG') {
-            sidebarAvatar.src = avatarUrl;
-        } else {
-            sidebarAvatar.style.backgroundImage = `url("${avatarUrl}")`;
-        }
+        sidebarAvatar.style.backgroundImage = `url("${avatarUrl}")`;
+    }
+    if (storyTrayAvatar) {
+        storyTrayAvatar.style.backgroundImage = `url("${avatarUrl}")`;
     }
 }
 
