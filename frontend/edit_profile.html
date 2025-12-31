@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Edit Profile - Social App</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="js/tailwindcss.js"></script>
+    <script id="tailwind-config">
+        if (typeof tailwind !== 'undefined') {
+            tailwind.config = {
+                darkMode: "class",
+                theme: {
+                    extend: {
+                        colors: {
+                            "primary": "#2b6cee",
+                            "background-light": "#f6f6f8",
+                            "background-dark": "#101622",
+                            "surface-dark": "#192233",
+                            "border-dark": "#232f48",
+                            "text-secondary": "#92a4c9",
+                        },
+                        fontFamily: {
+                            "display": ["Spline Sans", "Noto Sans", "sans-serif"],
+                            "body": ["Spline Sans", "Noto Sans", "sans-serif"],
+                        },
+                        borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px" },
+                    },
+                },
+            }
+        }
+    </script>
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display antialiased selection:bg-primary/30 selection:text-white">
+
+    <!-- Header -->
+    <header
+        class="sticky top-0 z-50 bg-white dark:bg-surface-dark border-b border-slate-200 dark:border-border-dark px-4 h-16 flex items-center justify-between shadow-sm">
+        <div class="flex items-center gap-4">
+            <a href="feed.html"
+                class="size-9 rounded-full bg-primary flex items-center justify-center shrink-0 hover:opacity-90 transition-opacity">
+                <span class="material-symbols-outlined text-white text-xl">all_inclusive</span>
+            </a>
+            <h1 class="text-lg font-bold">Edit Profile</h1>
+        </div>
+        <button onclick="window.location.href='profile.html'"
+            class="text-text-secondary hover:text-slate-900 dark:hover:text-white transition-colors">
+            <span class="material-symbols-outlined text-2xl">close</span>
+        </button>
+    </header>
+
+    <main class="min-h-[calc(100vh-64px)] flex justify-center w-full px-4 py-8">
+        <div
+            class="w-full max-w-2xl bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-border-dark shadow-sm p-6 md:p-8">
+            <form id="edit-profile-form" class="space-y-6">
+
+                <!-- Profile Image Section -->
+                <div class="flex flex-col items-center gap-4 mb-6">
+                    <div id="preview-avatar" onclick="document.getElementById('avatar_upload').click()"
+                        class="bg-center bg-no-repeat bg-cover rounded-full size-24 border-4 border-slate-100 dark:border-border-dark cursor-pointer relative group"
+                        style='background-image: url("https://ui-avatars.com/api/?background=random");'>
+                        <div
+                            class="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span class="material-symbols-outlined text-white">photo_camera</span>
+                        </div>
+                    </div>
+                    <input type="file" id="avatar_upload" class="hidden" accept="image/*">
+                    <div class="w-full max-w-md">
+                        <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Avatar
+                            URL</label>
+                        <input type="url" id="avatar_url" name="avatar_url" placeholder="https://example.com/image.jpg"
+                            class="w-full rounded-lg bg-slate-50 dark:bg-background-dark border border-slate-300 dark:border-border-dark px-4 py-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-sm">
+                        <p class="text-xs text-text-secondary mt-1">Paste a direct link to an image.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Username</label>
+                        <input type="text" id="username" name="username"
+                            class="w-full rounded-lg bg-slate-50 dark:bg-background-dark border border-slate-300 dark:border-border-dark px-4 py-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Email</label>
+                        <input type="email" id="email" name="email"
+                            class="w-full rounded-lg bg-slate-50 dark:bg-background-dark border border-slate-300 dark:border-border-dark px-4 py-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">First
+                            Name</label>
+                        <input type="text" id="first_name" name="first_name"
+                            class="w-full rounded-lg bg-slate-50 dark:bg-background-dark border border-slate-300 dark:border-border-dark px-4 py-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Middle
+                            Name</label>
+                        <input type="text" id="middle_name" name="middle_name"
+                            class="w-full rounded-lg bg-slate-50 dark:bg-background-dark border border-slate-300 dark:border-border-dark px-4 py-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-sm">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Last
+                            Name</label>
+                        <input type="text" id="last_name" name="last_name"
+                            class="w-full rounded-lg bg-slate-50 dark:bg-background-dark border border-slate-300 dark:border-border-dark px-4 py-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-sm">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">Bio</label>
+                    <textarea id="bio" name="bio" rows="4" placeholder="Tell us about yourself..."
+                        class="w-full rounded-lg bg-slate-50 dark:bg-background-dark border border-slate-300 dark:border-border-dark px-4 py-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all text-sm resize-none"></textarea>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" id="is_private" name="is_private"
+                        class="rounded border-slate-300 dark:border-border-dark bg-slate-50 dark:bg-background-dark text-primary focus:ring-primary/50">
+                    <label for="is_private" class="text-sm font-medium text-slate-700 dark:text-gray-300">Private
+                        Profile</label>
+                </div>
+
+                <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-200 dark:border-border-dark">
+                    <button type="button" onclick="window.location.href='profile.html'"
+                        class="px-5 py-2.5 rounded-lg text-slate-700 dark:text-white font-medium hover:bg-slate-100 dark:hover:bg-white/5 transition-colors text-sm">Cancel</button>
+                    <button type="submit" id="save-btn"
+                        class="px-6 py-2.5 rounded-lg bg-primary hover:bg-blue-600 text-white font-bold shadow-lg shadow-blue-500/20 transition-all text-sm flex items-center gap-2">
+                        <span>Save Changes</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
+        const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+
+        // Auth Check
+        if (!token) {
+            window.location.href = 'login.html';
+            throw new Error("Authentication required");
+        }
+
+        // Elements
+        const form = document.getElementById('edit-profile-form');
+        const usernameInput = document.getElementById('username');
+        const emailInput = document.getElementById('email');
+        const firstNameInput = document.getElementById('first_name');
+        const middleNameInput = document.getElementById('middle_name');
+        const lastNameInput = document.getElementById('last_name');
+        const bioInput = document.getElementById('bio');
+        const avatarUrlInput = document.getElementById('avatar_url');
+        const avatarUploadInput = document.getElementById('avatar_upload');
+        const isPrivateInput = document.getElementById('is_private');
+        const previewAvatar = document.getElementById('preview-avatar');
+        const saveBtn = document.getElementById('save-btn');
+
+        // Load Data
+        async function loadUserData() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/users/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const user = await response.json();
+                    usernameInput.value = user.username || '';
+                    emailInput.value = user.email || '';
+                    firstNameInput.value = user.first_name || '';
+                    middleNameInput.value = user.middle_name || '';
+                    lastNameInput.value = user.last_name || '';
+                    bioInput.value = user.bio || '';
+                    avatarUrlInput.value = user.avatar_url || user.profile_image || '';
+                    isPrivateInput.checked = user.is_private || false;
+
+                    if (avatarUrlInput.value) {
+                        previewAvatar.style.backgroundImage = `url("${avatarUrlInput.value}")`;
+                        let previewUrl = avatarUrlInput.value;
+                        // Optimize Cloudinary URL for preview display only
+                        if (previewUrl.includes('cloudinary.com') && previewUrl.includes('/upload/') && !previewUrl.includes('/w_')) {
+                            previewUrl = previewUrl.replace('/upload/', '/upload/w_200,h_200,c_fill,g_face,q_auto,f_auto/');
+                        }
+                        previewAvatar.style.backgroundImage = `url("${previewUrl}")`;
+                    }
+                } else if (response.status === 401) {
+                    localStorage.removeItem('access_token');
+                    sessionStorage.removeItem('access_token');
+                    window.location.href = 'login.html';
+                }
+            } catch (error) {
+                console.error('Failed to load user data:', error);
+            }
+        }
+
+        // Update Preview on Input
+        avatarUrlInput.addEventListener('input', (e) => {
+            const url = e.target.value;
+            if (url) {
+                previewAvatar.style.backgroundImage = `url("${url}")`;
+            }
+        });
+
+        // Handle File Selection for Preview
+        avatarUploadInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewAvatar.style.backgroundImage = `url("${e.target.result}")`;
+                }
+                reader.readAsDataURL(e.target.files[0]);
+            }
+        });
+
+        // Privacy Confirmation
+        isPrivateInput.addEventListener('change', function (e) {
+            const isChecked = this.checked;
+            const message = isChecked ? "Are you sure you want to make your profile private?" : "Are you sure you want to make your profile public?";
+            if (!confirm(message)) {
+                this.checked = !isChecked;
+            }
+        });
+
+        // Handle Submit
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Saving...';
+
+            let currentAvatarUrl = avatarUrlInput.value;
+            let mediaId = null;
+
+            // Upload Image if selected
+            if (avatarUploadInput.files.length > 0) {
+                const formData = new FormData();
+                formData.append('file', avatarUploadInput.files[0]);
+
+                try {
+                    const uploadRes = await fetch(`${API_BASE_URL}/posts/upload/image`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` },
+                        body: formData
+                    });
+
+                    if (uploadRes.ok) {
+                        const data = await uploadRes.json();
+                        if (data.view_link) currentAvatarUrl = data.view_link;
+                        else if (data.url) currentAvatarUrl = data.url;
+                        if (data.id || data.media_id) mediaId = data.id || data.media_id;
+                    } else {
+                        alert('Failed to upload image.');
+                        saveBtn.disabled = false;
+                        saveBtn.textContent = 'Save Changes';
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    alert('Error uploading image.');
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = 'Save Changes';
+                    return;
+                }
+            }
+
+            const payload = {
+                username: usernameInput.value,
+                email: emailInput.value,
+                first_name: firstNameInput.value,
+                middle_name: middleNameInput.value,
+                last_name: lastNameInput.value,
+                bio: bioInput.value,
+                avatar_url: currentAvatarUrl,
+                is_private: isPrivateInput.checked
+            };
+
+            if (mediaId) {
+                payload.media_id = mediaId;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/users/me`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    window.location.href = 'profile.html';
+                } else {
+                    alert('Failed to update profile.');
+                    saveBtn.disabled = false;
+                    saveBtn.textContent = 'Save Changes';
+                }
+            } catch (error) {
+                console.error('Error updating profile:', error);
+                alert('An error occurred.');
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Save Changes';
+            }
+        });
+
+        loadUserData();
+    </script>
+</body>
+
+</html>

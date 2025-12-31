@@ -1,0 +1,74 @@
+/* Story Tray & Ring Styles */
+.story-ring-active {
+    background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+    padding: 2.5px;
+}
+
+.story-ring-seen {
+    border: 1.5px solid #475569;
+    /* slate-600 */
+    padding: 2.5px;
+}
+
+.story-card {
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.story-card:hover {
+    transform: scale(1.02);
+}
+
+@keyframes progress-fill {
+    from {
+        width: 0%;
+    }
+
+    to {
+        width: 100%;
+    }
+}
+
+.animate-progress {
+    animation: progress-fill linear forwards;
+}
+
+/* Hide scrollbar */
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* Story Viewer Transitions */
+#story-viewer-overlay {
+    transition: opacity 0.3s ease-in-out;
+}
+
+#story-viewer-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+    display: flex !important;
+    /* Keep it flex but invisible for transitions if needed, or just let hidden handle it */
+}
+
+/* Reaction Bubbles Animation */
+@keyframes bubble-up {
+    0% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateY(-100px) scale(1.5);
+        opacity: 0;
+    }
+}
+
+.reaction-bubble {
+    position: absolute;
+    pointer-events: none;
+    animation: bubble-up 1s ease-out forwards;
+}

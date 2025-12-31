@@ -12,12 +12,17 @@ from app.core.db.models import User, UserFollows, UserBlocks
 from app.posts.models import Post, Media
 from app.engagement.models import PostLike, Comment, Bookmark, CommentLike
 from fastapi.middleware.cors import CORSMiddleware
-from app.posts.routes import router as posts_router
 from app.feed.routes import router as feed_router
 from app.following.routes import router as following_router
 from app.engagement.routes import router as engagement_router
 from app.discovery.routes import router as discovery_router
 from app.discovery.models import Hashtag, PostTag, Location
+from app.stories.routes import router as stories_router
+from app.stories.models import Story, StoryView
+from app.messenger.models import Conversation, Message
+from app.messenger.routes import router as messenger_router
+from app.notification.routes import router as notifications_router
+from app.notification.models import Notification
 # from app.main import router as main_router
 
 version = "v1"
@@ -25,14 +30,22 @@ version = "v1"
 async def lifespan(app: FastAPI):
     # STARTUP
     configure_cloudinary()
-    print("✅ Cloudinary Configured Successfully")
+    print("Cloudinary Configured Successfully")
     client = AsyncMongoClient(settings.MONGODB_URL)
-    await init_beanie(database=client[settings.DB_NAME], document_models=[User, UserFollows, UserBlocks, Post, Media, PostLike, Comment, Bookmark, CommentLike, Hashtag, PostTag, Location])
-    print("✅ MongoDB Connected")
+    await init_beanie(database=client[settings.DB_NAME], document_models=[
+        User, UserFollows, UserBlocks, 
+        Post, Media, 
+        PostLike, Comment, Bookmark, CommentLike, 
+        Hashtag, PostTag, Location,
+        Story, StoryView,
+        Conversation, Message,
+        Notification
+    ])
+    print("MongoDB Connected")
     yield
     # SHUTDOWN
     await client.close()
-    print("❌ MongoDB Closed")
+    print("MongoDB Closed")
 
 
 app = FastAPI(
@@ -53,7 +66,7 @@ async def health_check():
     
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Or ["*"] for testing
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -76,3 +89,12 @@ app.include_router(
 
 app.include_router(
     prefix=f"/api/{version}", router=discovery_router)
+
+app.include_router(
+    prefix=f"/api/{version}", router=stories_router)
+
+app.include_router(
+    prefix=f"/api/{version}", router=messenger_router)
+
+app.include_router(
+    prefix=f"/api/{version}", router=notifications_router)

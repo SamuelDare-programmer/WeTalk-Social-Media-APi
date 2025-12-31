@@ -5,7 +5,9 @@ from app.posts.schemas import PostResponse
 from app.core.auth.dependencies import get_current_user
 from app.core.db.models import User, UserFollows, FollowStatus
 from app.engagement.service import EngagementService
+from beanie import PydanticObjectId
 import asyncio
+from app.core.auth.schemas import UserPublicModel
 
 router = APIRouter(prefix="/feed", tags=["feed"])
 
@@ -35,13 +37,19 @@ async def get_timeline(
         fetch_links=True
     ).sort(-Post.created_at).skip(offset).limit(limit).to_list()
 
-    # 3. Hydrate (Likes/Bookmarks)
+    # 3. Hydrate (Likes/Bookmarks/Authors)
     engagement_service = EngagementService()
     
     post_ids = [str(p.id) for p in posts]
     original_ids = [str(p.original_post.id) for p in posts if p.original_post]
     all_ids_to_check = list(set(post_ids + original_ids))
     
+    # Batch user lookups for authors
+    author_ids = list(set([p.owner_id for p in posts]))
+    authors = await User.find({"_id": {"$in": [PydanticObjectId(aid) for aid in author_ids if PydanticObjectId.is_valid(aid)]}}).to_list()
+    author_map = {str(u.id): u for u in authors}
+
+
     liked_ids, bookmarked_ids = await asyncio.gather(
         engagement_service.get_liked_post_ids(str(current_user.id), all_ids_to_check),
         engagement_service.get_bookmarked_post_ids(str(current_user.id), all_ids_to_check)
@@ -50,10 +58,28 @@ async def get_timeline(
     liked_set = set(liked_ids)
     bookmarked_set = set(bookmarked_ids)
 
+    def map_user(u):
+        if not u: return None
+        return UserPublicModel(
+            _id=u.id,
+            username=u.username,
+            email=u.email,
+            first_name=u.first_name,
+            last_name=u.last_name,
+            bio=u.bio,
+            avatar_url=u.avatar_url,
+            is_private=getattr(u, 'is_private', False),
+            followers_count=getattr(u, 'followers_count', 0),
+            following_count=getattr(u, 'following_count', 0),
+            created_at=u.created_at
+        )
+
     def map_post(p):
+        author_user = author_map.get(p.owner_id)
         return PostResponse(
             id=str(p.id),
             owner_id=p.owner_id,
+            author=map_user(author_user),
             caption=p.caption,
             media=[{"media_id": str(m.id), "view_link": m.view_link, "media_type": m.media_type} for m in p.media] if p.media else [],
             likes_count=p.likes_count,

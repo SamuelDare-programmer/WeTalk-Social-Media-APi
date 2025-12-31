@@ -9,8 +9,16 @@ from typing import List, Optional, Dict, Any
 from app.core.errors import PostNotFoundException, ContentValidationException, CommentNotFoundException, UnauthorizedActionException
 from app.discovery.service import DiscoveryService
 from app.discovery.models import Location
+from app.core.db.models import User
+from app.core.auth.schemas import UserPublicModel
+from app.notification.service import NotificationService
+from app.notification.models import NotificationType
+from app.core.utils.text import extract_mentions, extract_hashtags
 
 class EngagementService:
+    def __init__(self):
+        self.notification_service = NotificationService()
+
     async def like_post(self, user_id: str, post_id: str):
         """
         Likes a post. Idempotent.
@@ -30,10 +38,17 @@ class EngagementService:
         if post:
             await post.inc({Post.likes_count: 1})
             
-            # TODO: Trigger Notification Event (Debounced)
-            # In a production environment, you would dispatch a task here:
             # send_like_notification.apply_async(args=[post.owner_id, user_id, post_id], countdown=10)
             # The task would check if the PostLike record still exists before sending.
+            
+            # Direct Notification (In a real app, you'd debounce this)
+            await self.notification_service.create_notification(
+                recipient_id=post.owner_id,
+                actor_id=user_id,
+                type=NotificationType.LIKE,
+                target_id=post_id,
+                metadata={"preview": post.caption[:50] if post.caption else "post"}
+            )
 
         return {"status": "success", "message": "Post liked"}
 
@@ -110,6 +125,50 @@ class EngagementService:
         # Increment post comments count
         await post.inc({Post.comments_count: 1})
         
+        # Notification for post owner
+        await self.notification_service.create_notification(
+            recipient_id=post.owner_id,
+            actor_id=user_id,
+            type=NotificationType.COMMENT,
+            target_id=post_id,
+            metadata={"comment_id": str(comment.id), "content": content[:50]}
+        )
+
+        # Notification for parent comment owner (if reply)
+        if parent_id:
+            parent_comment = await Comment.get(parent_uuid)
+            if parent_comment and parent_comment.user_id != user_id:
+                await self.notification_service.create_notification(
+                    recipient_id=parent_comment.user_id,
+                    actor_id=user_id,
+                    type=NotificationType.COMMENT,
+                    target_id=post_id,
+                    metadata={"comment_id": str(comment.id), "parent_id": str(parent_comment.id), "content": content[:50]}
+                )
+
+        # Handle Mentions
+        mentioned_usernames = extract_mentions(content)
+        if mentioned_usernames:
+            # Find users by username
+            mentioned_users = await User.find({"username": {"$in": list(mentioned_usernames)}}).to_list()
+            for m_user in mentioned_users:
+                # Don't notify the author or the post owner twice (though post owner logic is separate)
+                # Just notify if they are mentioned and exist
+                if str(m_user.id) != user_id:
+                    await self.notification_service.create_notification(
+                        recipient_id=str(m_user.id),
+                        actor_id=user_id,
+                        type=NotificationType.MENTION,
+                        target_id=post_id,
+                        metadata={"comment_id": str(comment.id), "content": content[:50], "source": "comment"}
+                    )
+        
+        # Handle Hashtags
+        hashtags = extract_hashtags(content)
+        if hashtags:
+            discovery_service = DiscoveryService()
+            await discovery_service.process_post_tags(post_id, list(hashtags))
+        
         return comment
     
     async def like_comment(self, user_id: str, comment_id: str):
@@ -128,7 +187,15 @@ class EngagementService:
         comment = await Comment.get(c_uuid)
         if comment:
             await comment.inc({Comment.like_count: 1})
-            # TODO: Trigger Notification Event
+            
+            # Notification for comment author
+            await self.notification_service.create_notification(
+                recipient_id=comment.user_id,
+                actor_id=user_id,
+                type=NotificationType.LIKE, # Maybe add COMMENT_LIKE type if needed, but LIKE is fine
+                target_id=str(comment.post_id),
+                metadata={"comment_id": str(comment.id), "preview": comment.content[:50]}
+            )
         
         return {"status": "success", "message": "Comment liked"}
 
@@ -209,21 +276,33 @@ class EngagementService:
 
         results = await asyncio.gather(*[fetch_replies(c) for c in top_level_comments])
         
-        # 3. Populate user_interaction (has_liked, is_author)
+        # 3. Populate user_interaction (has_liked, is_author) and Author details
         liked_ids = set()
+        user_ids = set()
+        
+        # Collect IDs
+        for c in results:
+            user_ids.add(c["user_id"])
+            for r in c.get("latest_replies", []):
+                user_ids.add(r["user_id"])
+
+        # Fetch Likes
         if user_id:
             all_comment_ids = []
             for c in results:
                 all_comment_ids.append(str(c["_id"]))
                 for r in c.get("latest_replies", []):
                     all_comment_ids.append(str(r["_id"]))
-            
             if all_comment_ids:
                 likes = await CommentLike.find(
                     CommentLike.user_id == user_id,
                     In(CommentLike.comment_id, all_comment_ids)
                 ).to_list()
                 liked_ids = {like.comment_id for like in likes}
+        
+        # Fetch Users
+        users = await User.find(In(User.id, [PydanticObjectId(uid) for uid in user_ids if PydanticObjectId.is_valid(uid)])).to_list()
+        user_map = {str(u.id): u for u in users}
 
         # Hydrate the response objects
         for c in results:
@@ -233,12 +312,20 @@ class EngagementService:
                 "is_author": c["user_id"] == user_id if user_id else False
             }
             
+            author = user_map.get(c["user_id"])
+            if author:
+                c["author"] = UserPublicModel(**author.model_dump())
+            
             for r in c.get("latest_replies", []):
                 r_id = str(r["_id"])
                 r["user_interaction"] = {
                     "has_liked": r_id in liked_ids,
                     "is_author": r["user_id"] == user_id if user_id else False
                 }
+                
+                r_author = user_map.get(r["user_id"])
+                if r_author:
+                    r["author"] = UserPublicModel(**r_author.model_dump())
 
         return results
 

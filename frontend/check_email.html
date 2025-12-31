@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Check Your Email</title>
+<script src="js/tailwindcss.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<script>
+        if (typeof tailwind !== 'undefined') {
+            tailwind.config = {
+                darkMode: "class",
+                theme: {
+                    extend: {
+                        colors: {
+                            primary: "#334BA2",
+                            secondary: "#7987C2",
+                            "background-light": "#F3F4F6",
+                            "background-dark": "#0B1120",
+                            "card-light": "#FFFFFF",
+                            "card-dark": "#1F2937",
+                            "input-bg-dark": "#374151",
+                            "input-border-light": "#E5E7EB",
+                            "input-border-dark": "#4B5563",
+                        },
+                        fontFamily: {
+                            display: ["Montserrat", "sans-serif"],
+                            body: ["Montserrat", "sans-serif"],
+                        },
+                        borderRadius: {
+                            DEFAULT: "0.5rem",
+                            'xl': '1rem',
+                            '2xl': '1.5rem',
+                        },
+                    },
+                },
+            };
+        }
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-body min-h-screen flex items-center justify-center p-4 antialiased transition-colors duration-300 text-gray-800 dark:text-gray-100">
+    <div class="bg-card-light dark:bg-card-dark rounded-2xl shadow-2xl overflow-hidden w-full max-w-md flex flex-col p-8 md:p-12 text-center transition-colors duration-300 border border-gray-200 dark:border-gray-700/50 relative">
+        
+        <!-- Theme Toggle -->
+        <button class="absolute top-6 right-6 p-2 rounded-full text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-primary z-20" onclick="document.documentElement.classList.toggle('dark')" title="Toggle Theme" type="button">
+            <span class="material-icons hidden dark:block">light_mode</span>
+            <span class="material-icons block dark:hidden">dark_mode</span>
+        </button>
+
+        <div class="flex justify-center mb-6">
+            <div class="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center">
+                <span class="material-icons text-primary text-4xl">mark_email_read</span>
+            </div>
+        </div>
+
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">Check your email</h1>
+        
+        <p class="text-gray-600 dark:text-gray-400 mb-8">
+            We've sent a verification link to your email address. Please check your inbox (and spam folder) to verify your account.
+        </p>
+
+        <a href="login.html" class="w-full bg-primary hover:bg-primary/80 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:shadow-primary/20 transition-all duration-200 transform active:scale-[0.98] inline-block">
+            Back to Login
+        </a>
+
+        <div class="mt-6 text-sm text-gray-500 dark:text-gray-400">
+            Didn't receive the email? <a href="#" class="text-secondary hover:text-primary dark:hover:text-white font-medium underline">Resend</a>
+        </div>
+    </div>
+</body>
+</html>

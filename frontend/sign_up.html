@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Sign Up - Create Account</title>
+    <script src="js/tailwindcss.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <script>
+        if (typeof tailwind !== 'undefined') {
+            tailwind.config = {
+                darkMode: "class",
+                theme: {
+                    extend: {
+                        colors: {
+                            primary: "#334BA2",
+                            secondary: "#7987C2",
+                            "background-light": "#F3F4F6",
+                            "background-dark": "#0B1120", // Darker background
+                            "card-light": "#FFFFFF",
+                            "card-dark": "#1F2937",
+                            "input-bg-dark": "#374151",
+                            "input-border-light": "#E5E7EB",
+                            "input-border-dark": "#4B5563",
+                        },
+                        fontFamily: {
+                            display: ["Montserrat", "sans-serif"],
+                            body: ["Montserrat", "sans-serif"],
+                        },
+                        borderRadius: {
+                            DEFAULT: "0.5rem",
+                            'xl': '1rem',
+                            '2xl': '1.5rem',
+                        },
+                    },
+                },
+            };
+        }
+    </script>
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark font-body min-h-screen flex items-center justify-center p-4 antialiased transition-colors duration-300 text-gray-800 dark:text-gray-100">
+    <div
+        class="bg-card-light dark:bg-card-dark rounded-2xl shadow-2xl overflow-hidden w-full max-w-5xl flex flex-col md:flex-row min-h-[650px] transition-colors duration-300 border border-gray-200 dark:border-gray-700/50">
+        <div
+            class="relative w-full md:w-5/12 hidden md:flex flex-col justify-center items-center text-white p-12 overflow-hidden">
+            <div class="absolute inset-0 z-0">
+                <img alt="Abstract blue and purple lights background" class="w-full h-full object-cover opacity-80"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNxkSEEYxpwcnyPkscsW9A45IbDetTSqKmu_P2R0Xj_Wx_5W5pXYanEqzdD-IKWRrmyEDEQAVgALN2zLo2QdrPaCJ8mzSkwa2GoP2cxNVBwnbni1Q89WK441bXQtoXedMMO-UFvZ3VJqG_-BzpqXvtRvwWmxfY6Az_fwpuz9XjSMqoZFqYZnhq2cNRkij2qb1bJyJLrx0K__lJKS1zBXYEj7TgqEvKzu-X3wN5AMlc4km0PZvXwo_d8uPDPRpZfbystLmO35Bly2Ll" />
+                <div class="absolute inset-0 bg-primary/60 backdrop-blur-[2px]"></div>
+                <div class="absolute top-10 left-10 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
+                <div class="absolute bottom-20 right-10 w-32 h-32 bg-purple-500/20 rounded-full blur-2xl"></div>
+            </div>
+            <div class="relative z-10 w-full h-full flex flex-col justify-between">
+                <div class="text-left">
+                    <div
+                        class="bg-white/10 w-10 h-10 rounded-lg flex items-center justify-center backdrop-blur-sm border border-white/20 mb-8">
+                        <span class="material-icons text-white">grid_view</span>
+                    </div>
+                </div>
+                <div
+                    class="flex flex-col justify-center items-center h-full text-center space-y-4 backdrop-blur-sm bg-gray-900/30 rounded-2xl p-8 border border-white/10 shadow-lg">
+                    <h1 class="text-4xl lg:text-5xl font-bold tracking-tight text-white">Let's Get <br />Started!</h1>
+                    <p class="text-gray-300 text-sm max-w-xs mx-auto mt-2">Join our community and explore new horizons
+                        with just a few clicks.</p>
+                </div>
+                <div class="w-full flex justify-center pt-8">
+                    <div class="h-1 w-16 bg-white/30 rounded-full"></div>
+                </div>
+            </div>
+        </div>
+        <div
+            class="w-full md:w-7/12 p-8 md:p-12 lg:p-16 flex flex-col justify-center relative bg-card-light dark:bg-card-dark transition-colors duration-300">
+            <button
+                class="absolute top-6 right-6 p-2 rounded-full text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-primary z-20"
+                onclick="document.documentElement.classList.toggle('dark')" title="Toggle Theme" type="button">
+                <span class="material-icons hidden dark:block">light_mode</span>
+                <span class="material-icons block dark:hidden">dark_mode</span>
+            </button>
+            <div class="max-w-md mx-auto w-full">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Create Account</h2>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm">Please enter your details to sign up.</p>
+                </div>
+                <form id="signup-form" class="space-y-5">
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <div class="w-full">
+                            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1"
+                                for="first-name">First Name</label>
+                            <input
+                                class="w-full px-4 py-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-input-border-light dark:border-input-border-dark text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-shadow text-sm"
+                                id="first-name" name="first-name" placeholder="Enter your first name" type="text" />
+                        </div>
+                        <div class="w-full">
+                            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1"
+                                for="last-name">Last Name</label>
+                            <input
+                                class="w-full px-4 py-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-input-border-light dark:border-input-border-dark text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-shadow text-sm"
+                                id="last-name" name="last-name" placeholder="Enter your last name" type="text" />
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1"
+                            for="username">Username</label>
+                        <input
+                            class="w-full px-4 py-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-input-border-light dark:border-input-border-dark text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-shadow text-sm"
+                            id="username" name="username" placeholder="Choose a username" type="text" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1"
+                            for="email">Email</label>
+                        <input
+                            class="w-full px-4 py-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-input-border-light dark:border-input-border-dark text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-shadow text-sm"
+                            id="email" name="email" placeholder="Enter your email" type="email" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1"
+                            for="password">Password</label>
+                        <div class="relative">
+                            <input
+                                class="w-full px-4 py-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-input-border-light dark:border-input-border-dark text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-shadow text-sm pr-10"
+                                id="password" name="password" placeholder="Create password" type="password" />
+                            <button
+                                class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                                type="button">
+                                <span class="material-icons text-lg">visibility_off</span>
+                            </button>
+                        </div>
+                        <p class="text-[10px] text-gray-500 mt-1 text-right">Must be at least 8 characters.</p>
+                    </div>
+                    <div class="flex items-center">
+                        <input
+                            class="h-4 w-4 text-primary rounded focus:ring-primary border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 focus:ring-offset-gray-100 dark:focus:ring-offset-gray-900"
+                            id="terms" name="terms" type="checkbox" />
+                        <label class="ml-2 block text-xs text-gray-600 dark:text-gray-400" for="terms">
+                            I agree with <a
+                                class="text-secondary hover:text-primary dark:hover:text-white font-medium underline"
+                                href="#">Terms</a> and <a
+                                class="text-secondary hover:text-primary dark:hover:text-white font-medium underline"
+                                href="#">Privacy Policy</a>
+                        </label>
+                    </div>
+                    <button
+                        class="w-full bg-primary hover:bg-primary/80 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:shadow-primary/20 transition-all duration-200 transform active:scale-[0.98]"
+                        type="submit">
+                        Create Account
+                    </button>
+                </form>
+                <div class="relative my-6">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-gray-200 dark:border-gray-700"></div>
+                    </div>
+                    <div class="relative flex justify-center text-xs">
+                        <span
+                            class="px-2 bg-card-light dark:bg-card-dark text-gray-500 dark:text-gray-400 uppercase tracking-wide">Or</span>
+                    </div>
+                </div>
+                <button
+                    class="w-full flex items-center justify-center gap-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm mb-4 group"
+                    type="button">
+                    <img alt="Google Logo" class="w-5 h-5 opacity-90 group-hover:opacity-100 transition-opacity"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuDbsF8tPGdnCzyFC2loAAfSsn0tE9x-JGvl_beBfDn_GrQ91X3RRI4UoBLIwe6CmfKN26cP0yiWUeU5bqsnelwGqPFvqG8yZbT8BzLOsHg3haLCso1aDz1OOg4f22GHSclJRtykrEBRM_4Vny01fVJFFCfoZN8GbHqX0ix7i7CZ_7Rz54xkNorFLIEonyq_LeD927AyEjDk_wF7Fe217O0I5uwY1ZkuhPqCEvU5TVpuWrySj8OynawGeDLqFgoCiElT9qCurt9SIydO" />
+                    Sign up with Google
+                </button>
+                <div class="flex gap-4">
+                    <button
+                        class="w-full flex items-center justify-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm group"
+                        type="button">
+                        <img alt="Apple Logo"
+                            class="w-5 h-5 invert-0 dark:invert opacity-90 group-hover:opacity-100 transition-opacity"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAx0GAr9jl4s-aecYTRiKovYgSPOXmvCPCOBvPq2td-lBKpx60PqtJq6xt5UeBDpiGDN5_U8kO-4wKooXUVvvj63HBHplYl-ybR26_CqwxgVEeOuAL3k0DXLx4o3noGJZhtiCXeqtw_xGxlzJmNo358N_MWUfB_qe3IhbWnPzfTaMqkVhOG2Ro07xtG_LPYy9w1FDxBCraJMAg0ijyU-FDZXC-v5qaCukrPzJifWUdD0jXHED9MwivIJuEHieKLJJvE0bAJEJxDJeU_" />
+                    </button>
+                    <button
+                        class="w-full flex items-center justify-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-sm group"
+                        type="button">
+                        <img alt="Twitter Logo"
+                            class="w-5 h-5 invert-0 dark:invert opacity-90 group-hover:opacity-100 transition-opacity"
+                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZi8Bb-Xm68AL95HxwQg3r8qnQAN677BMBLkI13a0DYbN7J3_m5GVZ9ndZ4LBfIZw0WUJx5YvEJzGVHmSH58t4Es952Y-WiEdqgUlo6emOuvRC8Uf7haIStjdMVo3nyC-FJ1pqQLngIi3tqXUSUTZk4YWu_eVCEnn4m0DQU93O-YSQV1EmDloUscUFV8htFRw-IYi3t6D4zvS1A2qzGsSOLXv0aEe1S0TsTeyP9-tFbNKEHv0WjWAMe3ikD0k7HD2khW8o0MDPUqhJ" />
+                    </button>
+                </div>
+                <div class="mt-8 text-center text-xs">
+                    <p class="text-gray-600 dark:text-gray-400">
+                        Already have an account?
+                        <a class="font-semibold text-secondary hover:text-primary dark:hover:text-white transition-colors"
+                            href="#">Log in</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.getElementById('signup-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const firstName = document.getElementById('first-name').value;
+            const lastName = document.getElementById('last-name').value;
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const terms = document.getElementById('terms').checked;
+
+            if (!terms) {
+                alert('Please agree to the Terms and Privacy Policy.');
+                return;
+            }
+
+            const payload = {
+                first_name: firstName,
+                last_name: lastName,
+                username: username,
+                email: email,
+                password: password
+            };
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/v1/auth/users/signup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    alert(data.message || 'Account created successfully! Please log in.');
+                    window.location.href = 'login.html';
+                } else {
+                    const error = await response.json();
+                    let errorMessage = 'Unknown error';
+                    if (error.detail) {
+                        errorMessage = typeof error.detail === 'string' ? error.detail : JSON.stringify(error.detail);
+                    } else if (error.message) {
+                        errorMessage = error.message;
+                    } else {
+                        errorMessage = JSON.stringify(error);
+                    }
+                    alert('Signup failed: ' + errorMessage);
+                }
+            } catch (err) {
+                console.error('Signup error:', err);
+                alert('An error occurred while signing up.');
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Profile - WeTalk</title>
+    <script src="js/tailwindcss.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script>
+        if (typeof tailwind !== 'undefined') {
+            tailwind.config = {
+                darkMode: "class",
+                theme: {
+                    extend: {
+                        colors: {
+                            primary: "#6366f1",
+                            secondary: "#ec4899",
+                            "background-light": "#f3f4f6",
+                            "background-dark": "#0f172a",
+                            "surface-light": "#ffffff",
+                            "surface-dark": "#1e293b",
+                            "border-light": "#e2e8f0",
+                            "border-dark": "#334155",
+                        },
+                        fontFamily: { display: ["Inter", "sans-serif"] },
+                    },
+                },
+            };
+        }
+    </script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: rgba(156, 163, 175, 0.5);
+            border-radius: 20px;
+        }
+
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: rgba(71, 85, 105, 0.5);
+        }
+
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display flex h-screen overflow-hidden antialiased selection:bg-primary/30 selection:text-white">
+
+    <!-- Navbar (Injected by navbar.js) -->
+    <script src="js/navbar.js"></script>
+
+    <div class="flex-1 overflow-y-auto custom-scrollbar">
+        <div class="max-w-[1000px] mx-auto pb-10">
+            <!-- Header Section (Cover + Profile Info) -->
+            <div
+                class="bg-white dark:bg-surface-dark border-x border-slate-200 dark:border-border-dark overflow-hidden shadow-sm lg:rounded-b-2xl">
+                <!-- Cover Image -->
+                <div class="h-48 bg-gradient-to-r from-blue-600 to-purple-600 relative">
+                    <button
+                        class="absolute bottom-4 right-4 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full backdrop-blur-sm transition-colors">
+                        <span class="material-symbols-outlined text-[20px]">photo_camera</span>
+                    </button>
+                </div>
+                <!-- Profile Info -->
+                <div class="px-6 pb-6 relative">
+                    <div class="flex justify-between items-end -mt-12 mb-4">
+                        <div id="profile-avatar-lg"
+                            class="user-avatar-img bg-center bg-no-repeat bg-cover rounded-full size-32 border-4 border-white dark:border-surface-dark shadow-md"
+                            style='background-image: url("https://ui-avatars.com/api/?name=User&background=random");'>
+                        </div>
+                        <div id="profile-actions" class="flex gap-2"></div>
+                    </div>
+                    <div>
+                        <h1 id="profile-display-name" class="text-2xl font-bold text-slate-900 dark:text-white">
+                            Loading...</h1>
+                        <p id="profile-handle" class="text-slate-500 dark:text-slate-400 text-sm">@...</p>
+                        <p id="profile-bio" class="text-slate-700 dark:text-gray-300 mt-3 text-sm">Digital creator, tech
+                            enthusiast, and coffee lover. ☕️</p>
+
+                        <div class="flex gap-6 mt-4 text-sm">
+                            <div class="flex gap-1 cursor-pointer hover:underline">
+                                <span id="following-count" class="font-bold text-slate-900 dark:text-white">0</span>
+                                <span class="text-slate-500">Following</span>
+                            </div>
+                            <div class="flex gap-1 cursor-pointer hover:underline">
+                                <span id="followers-count" class="font-bold text-slate-900 dark:text-white">0</span>
+                                <span class="text-slate-500">Followers</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Tabs -->
+                <div class="flex border-t border-slate-200 dark:border-border-dark px-6 overflow-x-auto hide-scrollbar">
+                    <button
+                        class="py-4 mr-6 text-primary border-b-2 border-primary font-medium text-sm whitespace-nowrap">Posts</button>
+                    <button
+                        class="py-4 mr-6 text-slate-500 hover:text-slate-900 dark:hover:text-white font-medium text-sm transition-colors whitespace-nowrap">Media</button>
+                    <button
+                        class="py-4 mr-6 text-slate-500 hover:text-slate-900 dark:hover:text-white font-medium text-sm transition-colors whitespace-nowrap">Likes</button>
+                </div>
+            </div>
+
+            <!-- Main Content Area (Feed + Sidebar) -->
+            <div class="mt-6 flex gap-6 px-4 lg:px-0">
+                <!-- Feed -->
+                <div class="flex-1 flex flex-col gap-5">
+                    <!-- Composer (Optional on profile) -->
+                    <div id="profile-composer"
+                        class="bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-border-dark p-4 shadow-sm hidden">
+                        <div class="flex gap-3 mb-3">
+                            <div class="user-avatar-img bg-center bg-no-repeat bg-cover rounded-full size-10 shrink-0"
+                                style='background-image: url("https://ui-avatars.com/api/?name=User&background=random");'>
+                            </div>
+                            <input onclick="window.location.href='post.html'"
+                                class="flex-1 bg-slate-100 dark:bg-slate-800 border-none rounded-full px-4 focus:ring-1 focus:ring-primary placeholder-slate-500 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                                placeholder="What's happening?" type="text" />
+                        </div>
+                    </div>
+
+                    <div id="feed-container" class="flex flex-col gap-5">
+                        <div class="p-8 text-center text-slate-500">Loading posts...</div>
+                    </div>
+                </div>
+
+                <!-- Right Sidebar (Intro/Photos) -->
+                <aside class="hidden lg:flex flex-col w-[350px] shrink-0 gap-6">
+                    <div
+                        class="bg-white dark:bg-surface-dark p-4 rounded-2xl border border-slate-200 dark:border-border-dark shadow-sm">
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-3">Intro</h3>
+                        <div class="flex flex-col gap-3 text-sm">
+                            <div class="flex items-center gap-3 text-slate-700 dark:text-gray-300">
+                                <span class="material-symbols-outlined text-slate-400">work</span>
+                                <span>Digital Creator</span>
+                            </div>
+                            <div class="flex items-center gap-3 text-slate-700 dark:text-gray-300">
+                                <span class="material-symbols-outlined text-slate-400">home</span>
+                                <span>Lives in <span class="font-semibold">San Francisco</span></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="bg-white dark:bg-surface-dark p-4 rounded-2xl border border-slate-200 dark:border-border-dark shadow-sm">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-lg font-bold text-slate-900 dark:text-white">Photos</h3>
+                            <a href="#" class="text-primary text-sm hover:underline">See all</a>
+                        </div>
+                        <div id="profile-photos-grid"
+                            class="grid grid-cols-3 gap-2 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 p-1">
+                            <!-- Photos here -->
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals (Copied from feed.html if needed for consistency) -->
+    <div id="post-modal"
+        class="fixed inset-0 z-[100] bg-black/80 hidden items-center justify-center p-4 md:p-10 backdrop-blur-sm">
+        <div
+            class="max-w-6xl w-full bg-white dark:bg-surface-dark rounded-xl overflow-hidden shadow-2xl flex flex-col md:flex-row h-full max-h-[800px]">
+            <!-- Left: Media Area -->
+            <div class="flex-1 bg-black flex items-center justify-center relative min-h-[300px]">
+                <img id="modal-image" class="max-w-full max-h-full object-contain hidden">
+                <video id="modal-video" class="hidden max-w-full max-h-full" controls loop></video>
+                <div id="modal-carousel" class="absolute inset-0 hidden flex flex-col justify-center"></div>
+            </div>
+
+            <!-- Right: Details Area -->
+            <div
+                class="w-full md:w-[400px] flex flex-col bg-white dark:bg-surface-dark border-l border-slate-100 dark:border-border-dark">
+                <!-- User Header -->
+                <div class="p-4 border-b border-slate-100 dark:border-border-dark flex items-center justify-between">
+                    <div class="flex items-center gap-3 cursor-pointer" id="modal-user-link">
+                        <div id="modal-avatar-container"
+                            class="size-9 rounded-full bg-center bg-cover border border-slate-100 dark:border-border-dark">
+                        </div>
+                        <div class="flex flex-col">
+                            <span id="modal-username" class="font-bold text-sm hover:underline"></span>
+                            <span id="modal-location" class="text-[10px] text-text-secondary"></span>
+                        </div>
+                    </div>
+                    <button onclick="closeModal()"
+                        class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+                        <span class="material-symbols-outlined text-slate-500">close</span>
+                    </button>
+                </div>
+
+                <!-- Comments/Caption Area -->
+                <div class="flex-1 overflow-y-auto p-4 custom-scrollbar" id="modal-scroll-area">
+                    <div class="flex gap-3 mb-6">
+                        <div id="modal-caption-avatar" class="size-8 rounded-full shrink-0 bg-center bg-cover"></div>
+                        <div class="text-sm">
+                            <span id="modal-caption-user" class="font-bold mr-2"></span>
+                            <span id="modal-caption" class="text-slate-800 dark:text-slate-200"></span>
+                            <p id="modal-time" class="text-[10px] text-text-secondary mt-2"></p>
+                        </div>
+                    </div>
+                    <div id="modal-comments" class="space-y-6"></div>
+                </div>
+
+                <!-- Action Area -->
+                <div class="p-4 border-t border-slate-100 dark:border-border-dark space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex gap-4">
+                            <button id="modal-like-btn"
+                                class="hover:scale-110 active:scale-125 transition-transform"><span
+                                    class="material-symbols-outlined">favorite</span></button>
+                            <button class="hover:scale-110 transition-transform"><span
+                                    class="material-symbols-outlined">chat_bubble</span></button>
+                            <button class="hover:scale-110 transition-transform"><span
+                                    class="material-symbols-outlined">send</span></button>
+                        </div>
+                        <button class="hover:scale-110 transition-transform"><span
+                                class="material-symbols-outlined">bookmark</span></button>
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold" id="modal-likes-count">0 likes</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/profile.js" defer></script>
+    <script>
+        // API_BASE_URL and token are already defined in profile.js
+
+        window.closeModal = function () {
+            document.getElementById('post-modal').classList.add('hidden');
+            document.getElementById('post-modal').classList.remove('flex');
+            document.body.style.overflow = '';
+            document.getElementById('modal-video').pause();
+        }
+
+        window.updateCarouselDots = function (carouselId, el) {
+            const index = Math.round(el.scrollLeft / el.offsetWidth);
+            const dots = document.getElementById(carouselId + '-dots');
+            if (!dots) return;
+            Array.from(dots.children).forEach((dot, i) => {
+                if (i === index) {
+                    dot.classList.add('bg-white', 'scale-125');
+                    dot.classList.remove('bg-white/50');
+                } else {
+                    dot.classList.remove('bg-white', 'scale-125');
+                    dot.classList.add('bg-white/50');
+                }
+            });
+        }
+
+        window.showPostInModal = function (post) {
+            const modal = document.getElementById('post-modal');
+            const imgEl = document.getElementById('modal-image');
+            const vidEl = document.getElementById('modal-video');
+            const carouselEl = document.getElementById('modal-carousel');
+
+            imgEl.classList.add('hidden');
+            vidEl.classList.add('hidden');
+            carouselEl.classList.add('hidden');
+            vidEl.pause();
+
+            if (post.media && post.media.length > 1) {
+                carouselEl.classList.remove('hidden');
+                const carouselId = `modal-carousel-${post.id}`;
+                const slidesHtml = post.media.map(m => {
+                    const url = m.view_link || m.url;
+                    const isVideo = m.media_type === 'video' || (url && url.match(/\.(mp4|webm|mov)$/i));
+                    let inner = isVideo
+                        ? `<video src="${url}" controls class="w-full h-full max-h-[90vh] object-contain bg-black mx-auto"></video>`
+                        : `<img src="${url}" class="w-full h-full max-h-[90vh] object-contain mx-auto">`;
+                    return `<div class="w-full flex-shrink-0 snap-center flex items-center justify-center bg-black">${inner}</div>`;
+                }).join('');
+
+                const dotsHtml = post.media.map((_, i) => `
+                    <div class="w-1.5 h-1.5 rounded-full bg-white/50 transition-all duration-300 ${i === 0 ? 'bg-white scale-125' : ''}"></div>
+                `).join('');
+
+                carouselEl.innerHTML = `
+                    <div class="relative group/carousel w-full h-full">
+                        <div id="${carouselId}" class="flex w-full h-full overflow-x-auto snap-x snap-mandatory scrollbar-hide touch-pan-x items-center" onscroll="updateCarouselDots('${carouselId}', this)">
+                            ${slidesHtml}
+                        </div>
+                        <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full pointer-events-none z-10" id="${carouselId}-dots">
+                            ${dotsHtml}
+                        </div>
+                    </div>
+                `;
+            } else {
+                const media = post.media?.[0] || {};
+                const url = media.view_link || media.url;
+                const isVideo = media.media_type === 'video' || (url && url.match(/\.(mp4|webm|mov)$/i));
+                if (isVideo) {
+                    vidEl.classList.remove('hidden');
+                    vidEl.src = url;
+                } else {
+                    imgEl.classList.remove('hidden');
+                    imgEl.src = url;
+                }
+            }
+
+            const author = post.author || {};
+            document.getElementById('modal-username').textContent = author.username || 'User';
+            document.getElementById('modal-avatar-container').style.backgroundImage = `url("${author.avatar_url || 'https://ui-avatars.com/api/?name=' + (author.username || 'U')}")`;
+            document.getElementById('modal-caption-user').textContent = author.username || 'User';
+            document.getElementById('modal-caption-avatar').style.backgroundImage = `url("${author.avatar_url || 'https://ui-avatars.com/api/?name=' + (author.username || 'U')}")`;
+            document.getElementById('modal-caption').textContent = post.caption || '';
+            const isLiked = post.is_liked || false;
+            const likeBtn = document.getElementById('modal-like-btn');
+            const likeIcon = likeBtn.querySelector('.material-symbols-outlined');
+
+            if (isLiked) {
+                likeIcon.style.fontVariationSettings = "'FILL' 1";
+                likeIcon.classList.add('text-pink-500');
+            } else {
+                likeIcon.style.fontVariationSettings = "";
+                likeIcon.classList.remove('text-pink-500');
+            }
+
+            likeBtn.onclick = () => handleLike(post.id || post._id, likeBtn);
+
+            document.getElementById('modal-likes-count').textContent = `${post.likes_count || 0} likes`;
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const photosGrid = document.getElementById('profile-photos-grid');
+
+            if (!token || !photosGrid) return;
+
+            async function getTargetUserId() {
+                const urlParams = new URLSearchParams(window.location.search);
+                let username = urlParams.get('username');
+
+                try {
+                    const targetUrl = username
+                        ? `${API_BASE_URL}/users/${username}`
+                        : `${API_BASE_URL}/auth/users/me`;
+                    const res = await fetch(targetUrl, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (res.ok) {
+                        const user = await res.json();
+                        return user.id || user._id;
+                    }
+                } catch (e) { console.error(e); }
+                return null;
+            }
+
+            async function loadUserPhotos() {
+                const userId = await getTargetUserId();
+                if (!userId) return;
+
+                try {
+                    const res = await fetch(`${API_BASE_URL}/users/${userId}/posts`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+
+                    if (res.ok) {
+                        const posts = await res.json();
+                        const photoItems = [];
+
+                        posts.forEach(post => {
+                            if (post.media && post.media.length > 0) {
+                                post.media.forEach(m => {
+                                    const url = m.view_link || m.url;
+                                    const isImage = m.media_type === 'image' || (url && !url.match(/\.(mp4|webm|mov)$/i));
+                                    if (isImage && url) photoItems.push({ url, post });
+                                });
+                            }
+                        });
+
+                        photosGrid.innerHTML = '';
+                        if (photoItems.length === 0) {
+                            photosGrid.innerHTML = '<div class="col-span-3 text-center text-xs text-slate-500 py-4">No photos</div>';
+                        } else {
+                            photoItems.slice(0, 9).forEach(item => {
+                                const div = document.createElement('div');
+                                div.className = 'aspect-square rounded-lg overflow-hidden bg-slate-200 dark:bg-slate-700 cursor-pointer hover:opacity-90 transition-opacity';
+                                div.innerHTML = `<img src="${item.url}" class="w-full h-full object-cover" loading="lazy">`;
+                                div.onclick = () => showPostInModal(item.post);
+                                photosGrid.appendChild(div);
+                            });
+                        }
+                    }
+                } catch (e) {
+                    console.error("Failed to load photos:", e);
+                }
+            }
+
+            loadUserPhotos();
+        });
+    </script>
+</body>
+
+</html>

@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional
 from datetime import datetime
 from app.discovery.schemas import LocationResponse
+from app.core.auth.schemas import UserPublicModel
 
 
 
@@ -15,7 +16,7 @@ class MediaResponse(BaseModel):
     Frontend uses 'media_id' to create the post.
     """
     media_id: str
-    view_link: str  # The public Google Drive view link
+    view_link: Optional[str] = None  # The public Google Drive view link
     media_type: Optional[str] = None # e.g. "image/jpeg"
 
 class ImageUploadResponse(BaseModel):
@@ -54,6 +55,7 @@ class PostResponse(BaseModel):
     id: str = Field(alias="_id")
     owner_id: str
     caption: Optional[str] = None
+    author: Optional[UserPublicModel] = None
     
     # We return the full Media object (or at least the URL) so the frontend can render it
     media: List[MediaResponse] = [] 
@@ -66,9 +68,6 @@ class PostResponse(BaseModel):
     is_liked: bool = False
     original_post: Optional["PostResponse"] = None
     location: Optional[LocationResponse] = None
-    
-    # Optional: If you want to expand the user details
-    # owner: Optional[UserPublicModel] = None
 
     model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
 

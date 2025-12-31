@@ -9,7 +9,7 @@ celerybeat-schedule*
 celerybeat.pid
 
 # Temporary uploads
-temp_uploads/
+.temp_uploads/
 
 # Logs
 *.log

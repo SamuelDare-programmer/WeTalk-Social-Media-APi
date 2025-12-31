@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List
 from datetime import datetime
 import uuid
+from app.core.auth.schemas import UserPublicModel
 
 class CommentCreate(BaseModel):
     content: str = Field(..., min_length=1, max_length=2200)
@@ -26,6 +27,7 @@ class CommentResponse(BaseModel):
     reply_count: int = 0
     parent_id: Optional[uuid.UUID] = None
     user_interaction: Optional[UserInteraction] = None
+    author: Optional[UserPublicModel] = None
 
     model_config = ConfigDict(
         populate_by_name=True,

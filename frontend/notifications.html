@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Notifications - WeTalk</title>
+
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <script src="js/tailwindcss.js"></script>
+
+    <script id="tailwind-config">
+        if (typeof tailwind !== 'undefined') {
+            tailwind.config = {
+                darkMode: "class",
+                theme: {
+                    extend: {
+                        colors: {
+                            primary: "#6366f1",
+                            secondary: "#ec4899",
+                            "background-light": "#f3f4f6",
+                            "background-dark": "#0f172a",
+                            "surface-light": "#ffffff",
+                            "surface-dark": "#1e293b",
+                            "border-light": "#e2e8f0",
+                            "border-dark": "#334155",
+                            "text-secondary": "#94a3b8",
+                        },
+                        fontFamily: {
+                            "display": ["Spline Sans", "sans-serif"],
+                        }
+                    },
+                },
+            }
+        }
+    </script>
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display flex h-screen overflow-hidden antialiased">
+    <!-- Navbar (Injected by navbar.js) -->
+    <script src="js/navbar.js"></script>
+
+    <div class="flex-1 overflow-y-auto custom-scrollbar pt-6 pb-20">
+        <div class="max-w-[600px] mx-auto px-4">
+            <div class="flex items-center justify-between mb-8">
+                <h1 class="text-2xl font-bold">Notifications</h1>
+                <button onclick="markAllAsRead()" class="text-sm font-semibold text-primary hover:underline">Mark all as
+                    read</button>
+            </div>
+
+            <div id="notifications-container" class="space-y-4">
+                <!-- Skeletons -->
+                <div
+                    class="bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-border-dark animate-pulse flex gap-3">
+                    <div class="size-12 rounded-full bg-slate-200 dark:bg-slate-800"></div>
+                    <div class="flex-1 space-y-2 py-1">
+                        <div class="h-4 bg-slate-200 dark:bg-slate-800 rounded w-3/4"></div>
+                        <div class="h-3 bg-slate-200 dark:bg-slate-800 rounded w-1/4"></div>
+                    </div>
+                </div>
+                <div
+                    class="bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-border-dark animate-pulse flex gap-3">
+                    <div class="size-12 rounded-full bg-slate-200 dark:bg-slate-800"></div>
+                    <div class="flex-1 space-y-2 py-1">
+                        <div class="h-4 bg-slate-200 dark:bg-slate-800 rounded w-3/4"></div>
+                        <div class="h-3 bg-slate-200 dark:bg-slate-800 rounded w-1/4"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="load-more-trigger" class="h-20 flex items-center justify-center hidden">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
+        const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+
+        if (!token) window.location.href = 'login.html';
+
+        let offset = 0;
+        const limit = 20;
+        let loading = false;
+        let hasMore = true;
+
+        const container = document.getElementById('notifications-container');
+
+        async function fetchNotifications(reset = false) {
+            if (loading || (!reset && !hasMore)) return;
+            loading = true;
+            if (!reset) document.getElementById('load-more-trigger').classList.remove('hidden');
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/notifications?limit=${limit}&offset=${offset}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    if (reset) {
+                        container.innerHTML = '';
+                        offset = 0;
+                        hasMore = true;
+                    }
+
+                    const items = data.items;
+                    if (items.length < limit) hasMore = false;
+                    offset += items.length;
+
+                    renderNotifications(items);
+
+                    if (items.length === 0 && offset === 0) {
+                        container.innerHTML = '<div class="p-12 text-center text-text-secondary">No notifications yet</div>';
+                    }
+                }
+            } catch (e) { console.error(e); }
+            finally {
+                loading = false;
+                document.getElementById('load-more-trigger').classList.add('hidden');
+            }
+        }
+
+        function renderNotifications(items) {
+            items.forEach(item => {
+                const actorName = item.actor.username;
+                const avatarUrl = item.actor.avatar_url || 'https://ui-avatars.com/api/?name=' + actorName;
+                const timeStr = new Date(item.created_at).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+                let actionText = '';
+                let icon = '';
+                let link = '#';
+
+                switch (item.type) {
+                    case 'follow':
+                        actionText = 'started following you';
+                        icon = 'person_add';
+                        link = `profile.html?username=${actorName}`;
+                        break;
+                    case 'follow_request':
+                        actionText = 'requested to follow you';
+                        icon = 'shield_person';
+                        link = `profile.html?username=${actorName}`;
+                        break;
+                    case 'like':
+                        actionText = 'liked your post';
+                        icon = 'favorite';
+                        link = `feed.html?post=${item.target_id}`; // Post detail view could be added or just feed with hash
+                        break;
+                    case 'comment':
+                        actionText = 'commented on your post';
+                        icon = 'chat_bubble';
+                        link = `feed.html?post=${item.target_id}`;
+                        break;
+                    case 'mention':
+                        actionText = 'mentioned you in a ' + (item.metadata.source || 'content');
+                        icon = 'alternate_email';
+                        link = `feed.html?post=${item.target_id}`;
+                        break;
+                    case 'message':
+                        actionText = 'sent you a message';
+                        icon = 'mail';
+                        link = 'messaging.html';
+                        break;
+                }
+
+                const html = `
+                    <div class="bg-white dark:bg-surface-dark p-4 rounded-xl border ${item.is_read ? 'border-slate-200 dark:border-border-dark' : 'border-primary/50 bg-primary/5 shadow-sm'} flex gap-3 transition-all hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer" onclick="markAsRead('${item.id}', '${link}')">
+                        <div class="relative">
+                            <img src="${avatarUrl}" class="size-12 rounded-full object-cover">
+                            <div class="absolute -bottom-1 -right-1 size-6 rounded-full bg-surface-dark border-2 border-surface-dark flex items-center justify-center">
+                                <span class="material-symbols-outlined text-xs text-primary filled" style="font-variation-settings: 'FILL' 1;">${icon}</span>
+                            </div>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm">
+                                <span class="font-bold hover:underline" onclick="event.stopPropagation(); location.href='profile.html?username=${actorName}'">${actorName}</span>
+                                <span class="text-slate-600 dark:text-slate-400">${actionText}</span>
+                            </p>
+                            <p class="text-xs text-text-secondary mt-1">${timeStr}</p>
+                            ${item.metadata.preview ? `<p class="text-xs text-text-secondary mt-2 italic line-clamp-1 border-l-2 border-slate-200 dark:border-border-dark pl-2">"${item.metadata.preview}"</p>` : ''}
+                        </div>
+                        ${!item.is_read ? `<div class="size-2 rounded-full bg-primary mt-5"></div>` : ''}
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+        async function markAsRead(id, link) {
+            try {
+                await fetch(`${API_BASE_URL}/notifications/${id}/read`, {
+                    method: 'PATCH',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (link !== '#') window.location.href = link;
+                else fetchNotifications(true);
+            } catch (e) {
+                console.error(e);
+                if (link !== '#') window.location.href = link;
+            }
+        }
+
+        async function markAllAsRead() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/notifications/read-all`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) fetchNotifications(true);
+            } catch (e) { console.error(e); }
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchNotifications(true);
+        });
+
+        // Infinite Scroll
+        const scrollContainer = document.querySelector('.flex-1.overflow-y-auto');
+        scrollContainer.addEventListener('scroll', () => {
+            if (scrollContainer.scrollTop + scrollContainer.clientHeight >= scrollContainer.scrollHeight - 100) {
+                fetchNotifications();
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -95,6 +95,16 @@ class PrivacyException(WeTalkException):
     pass
 
 
+class StoryNotFoundException(WeTalkException):
+    """Exception raised when a story is not found."""
+    pass
+
+
+class ConversationNotFoundException(WeTalkException):
+    """Exception raised when a conversation is not found."""
+    pass
+
+
 def create_exception_handler(
     status_code: int, initial_detail: Any
 ) -> Callable[[Request, Exception], JSONResponse]:
@@ -296,6 +306,30 @@ def register_exceptions(app: FastAPI):
                 "message": "Privacy settings prevent this action",
                 "error_code": "privacy_error",
                 "resolution": "The user's privacy settings do not allow this",
+            },
+        ),
+    )
+
+    app.add_exception_handler(
+        StoryNotFoundException,
+        create_exception_handler(
+            status_code=status.HTTP_404_NOT_FOUND,
+            initial_detail={
+                "message": "Story not found",
+                "error_code": "story_not_found",
+                "resolution": "Check the story ID",
+            },
+        ),
+    )
+
+    app.add_exception_handler(
+        ConversationNotFoundException,
+        create_exception_handler(
+            status_code=status.HTTP_404_NOT_FOUND,
+            initial_detail={
+                "message": "Conversation not found",
+                "error_code": "conversation_not_found",
+                "resolution": "Check the conversation ID",
             },
         ),
     )

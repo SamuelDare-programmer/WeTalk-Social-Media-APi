@@ -7,8 +7,13 @@ from app.core.config import settings
 import asyncio
 from pydantic import BaseModel, Field, ConfigDict
 from app.core.errors import SelfOperationException, UnauthorizedActionException, UserNotFoundException, RelationshipNotFoundException, PrivacyException, ContentValidationException
+from app.notification.service import NotificationService
+from app.notification.models import NotificationType
 
 class FollowService:
+    def __init__(self):
+        self.notification_service = NotificationService()
+
     async def follow_user(self, follower_id: str, target_user_id: str):
         """
         Creates a following relationship with privacy, block, and idempotency checks.
@@ -65,6 +70,12 @@ class FollowService:
                 },
                 template_name="follow_request.html"
             )
+            # Notification
+            await self.notification_service.create_notification(
+                recipient_id=target_user_id,
+                actor_id=follower_id,
+                type=NotificationType.FOLLOW_REQUEST
+            )
         else:
             status = FollowStatus.ACTIVE
             # Trigger "New Follower" Notification event
@@ -78,6 +89,12 @@ class FollowService:
                     "profile_url": f"{settings.DOMAIN_NAME}/users/{follower.username}"
                 },
                 template_name="new_follower.html"
+            )
+            # Notification
+            await self.notification_service.create_notification(
+                recipient_id=target_user_id,
+                actor_id=follower_id,
+                type=NotificationType.FOLLOW
             )
             
             # Increment follower count for target
@@ -202,6 +219,13 @@ class FollowService:
             follower = await User.get(PydanticObjectId(follower_id))
             if follower:
                 await follower.inc({User.following_count: 1})
+            
+            # Notification for the follower that their request was accepted
+            await self.notification_service.create_notification(
+                recipient_id=follower_id,
+                actor_id=target_user_id,
+                type=NotificationType.FOLLOW
+            )
             
             return {"status": "success", "relationship_status": "active"}
 

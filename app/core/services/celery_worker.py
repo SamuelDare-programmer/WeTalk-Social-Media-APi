@@ -11,6 +11,8 @@ import time
 from beanie import init_beanie, PydanticObjectId
 from app.core.config import settings, configure_cloudinary
 from app.posts.models import Media, MediaStatus, MediaType
+from app.stories.models import Story, StoryView
+from datetime import datetime, timezone
 
 
 c_app = Celery("social_media_api")
@@ -70,7 +72,7 @@ def cleanup_temp_files():
     Periodic task to clean up temporary files older than 1 hour.
     This ensures disk space is reclaimed even if workers crash.
     """
-    temp_dir = "temp_uploads"
+    temp_dir = ".temp_uploads"
     expiry_time = 300  # 5 minutes in seconds
     
     if not os.path.exists(temp_dir):
@@ -89,3 +91,48 @@ def cleanup_temp_files():
                     count += 1
         except Exception as e:
             print(f"Error deleting stale file {filename}: {e}")
+
+@c_app.task
+def cleanup_expired_stories():
+    """
+    Finds stories that have expired, deletes their media from Cloudinary,
+    and removes the DB records.
+    """
+    async_to_sync(_cleanup_expired_stories_async)()
+
+async def _cleanup_expired_stories_async():
+    client = AsyncMongoClient(settings.MONGODB_URL)
+    try:
+        await init_beanie(database=client[settings.DB_NAME], document_models=[Media, Story, StoryView])
+        
+        now = datetime.now(timezone.utc)
+        # Find stories where expires_at <= now
+        expired_stories = await Story.find(Story.expires_at <= now, fetch_links=True).to_list()
+        
+        if not expired_stories:
+            return
+
+        print(f"Found {len(expired_stories)} expired stories to clean up.")
+        
+        for story in expired_stories:
+            # Delete associated data
+            await StoryView.find(StoryView.story_id == str(story.id)).delete()
+            
+            # Fetch and delete media from Cloudinary
+            media = await story.media.fetch()
+            if media and media.public_id:
+                try:
+                    configure_cloudinary()
+                    resource_type = "video" if media.file_type == MediaType.VIDEO else "image"
+                    cloudinary.uploader.destroy(media.public_id, resource_type=resource_type)
+                    print(f"Deleted Cloudinary asset: {media.public_id}")
+                except Exception as e:
+                    print(f"Cloudinary delete failed for {media.public_id}: {e}")
+                
+                await media.delete()
+
+            await story.delete()
+            print(f"Deleted story {story.id} and its associated media.")
+
+    finally:
+        client.close()

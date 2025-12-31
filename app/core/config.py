@@ -99,5 +99,9 @@ beat_schedule = {
     "cleanup-temp-files-hourly": {
         "task": "app.core.services.celery_worker.cleanup_temp_files",
         "schedule": crontab(minute="*/5"),  # Run every 5 minutes
+    },
+    "cleanup-expired-stories-minutely": {
+        "task": "app.core.services.celery_worker.cleanup_expired_stories",
+        "schedule": crontab(minute="*"),  # Run every minute
     }
 }

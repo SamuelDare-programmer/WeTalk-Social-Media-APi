@@ -14,7 +14,33 @@ from app.following.schemas import (
 # async def get_current_user():
 #     return "6942a0f705abd2a972494f60"
 
+from app.core.auth.service import UserService
+from app.core.auth.schemas import UserPublicModel
+from fastapi import APIRouter, Depends, Query, status, HTTPException
+
 router = APIRouter(prefix="/users", tags=["following"])
+
+@router.get("/{identifier}", response_model=UserPublicModel)
+async def get_user_profile(identifier: str):
+    """
+    Fetch a user's public profile by ID or username.
+    """
+    service = UserService()
+    # Attempt to fetch by PydanticObjectId (ID) first if it looks like one, otherwise username
+    user = None
+    try:
+        from beanie import PydanticObjectId
+        user = await service.get_user_by_id(identifier)
+    except:
+        pass
+    
+    if not user:
+        user = await service.get_user(identifier)
+        
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    return user
 
 @router.get("/{user_id}/followers", response_model=FollowListResponse)
 async def get_followers(

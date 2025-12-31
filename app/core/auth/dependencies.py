@@ -60,6 +60,18 @@ async def get_current_user(token_data: dict = Depends(AccessTokenBearer())):
         raise errors.UserNotFoundException() 
     return user
 
+async def get_current_user_ws(token: str):
+    """
+    WebSocket Authentication Helper.
+    Manually validates token since WebSockets don't have HTTP Headers standardly.
+    """
+    token_data = utils.decode_access_token(token)
+    if not token_data or token_data.get("refresh"):
+         return None
+    
+    user = await user_service.get_user_by_id(token_data["sub"])
+    return user
+
 # class RoleChecker:
 #     # def __init__(self, allowed_roles: list[str]):
 #     #     self.allowed_roles = allowed_roles
@@ -68,5 +80,3 @@ async def get_current_user(token_data: dict = Depends(AccessTokenBearer())):
 #         if current_user.is_verified != True:
 #             raise errors.EmailNotVerifiedException()
 #         return True
-    
-    

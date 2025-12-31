@@ -5,16 +5,24 @@ from bson.errors import InvalidId
 from app.core.errors import PostNotFoundException, MediaValidationException, UnauthorizedActionException, ContentValidationException
 from app.discovery.models import Location
 from app.discovery.service import DiscoveryService
+from app.notification.service import NotificationService
+from app.notification.models import NotificationType
+from app.core.utils.text import extract_mentions, extract_hashtags
+from app.core.db.models import User
 
 class PostService:
+    def __init__(self):
+        self.notification_service = NotificationService()
+
     async def create_post(self, user_id: str, req: CreatePostRequest) -> Post:
         media_objects = []
         for media_id in req.media_ids:
             media = await Media.get(PydanticObjectId(media_id))
             if not media or media.owner_id != user_id:
                 raise MediaValidationException(f"Invalid media_id: {media_id}")
-            if media.status != MediaStatus.ACTIVE:
-                raise MediaValidationException(f"Media is not ready: {media_id}")
+            allowed_statuses = [MediaStatus.ACTIVE, MediaStatus.PENDING]
+            if media.status not in allowed_statuses:
+                raise MediaValidationException(f"Media is not ready (Status: {media.status}): {media_id}")
             media_objects.append(media)
 
         location = None
@@ -34,9 +42,32 @@ class PostService:
         await new_post.save()
 
         # Integrate Discovery: Process Hashtags
-        if req.tags:
+        tags_to_process = set(req.tags or [])
+        if req.caption:
+            tags_to_process.update(extract_hashtags(req.caption))
+            
+        if tags_to_process:
             discovery_service = DiscoveryService()
-            await discovery_service.process_post_tags(str(new_post.id), req.tags)
+            await discovery_service.process_post_tags(str(new_post.id), list(tags_to_process))
+            # Optionally update the post document if we want hashtags extracted from caption to be in the tags field
+            if tags_to_process != set(req.tags or []):
+                new_post.tags = list(tags_to_process)
+                await new_post.save()
+
+        # Handle Mentions
+        if req.caption:
+            mentioned_usernames = extract_mentions(req.caption)
+            if mentioned_usernames:
+                mentioned_users = await User.find({"username": {"$in": list(mentioned_usernames)}}).to_list()
+                for m_user in mentioned_users:
+                    if str(m_user.id) != user_id:
+                        await self.notification_service.create_notification(
+                            recipient_id=str(m_user.id),
+                            actor_id=user_id,
+                            type=NotificationType.MENTION,
+                            target_id=str(new_post.id),
+                            metadata={"preview": req.caption[:50], "source": "post"}
+                        )
             
         return new_post
 
@@ -69,12 +100,30 @@ class PostService:
         )
 
     async def delete_post(self, post_id: str, user_id: str):
-        post = await Post.get(PydanticObjectId(post_id))
+        post = await Post.get(PydanticObjectId(post_id), fetch_links=True)
         if not post:
             raise PostNotFoundException()
         
         if post.owner_id != user_id:
             raise UnauthorizedActionException("You are not authorized to delete this post")
+        
+        # Delete associated media from Cloudinary and database
+        if post.media:
+            import cloudinary.uploader
+            from app.core.config import configure_cloudinary
+            configure_cloudinary()
+            
+            for media in post.media:
+                if media.public_id:
+                    try:
+                        # Determine resource type based on file type
+                        from .models import MediaType
+                        resource_type = "video" if media.file_type == MediaType.VIDEO else "image"
+                        cloudinary.uploader.destroy(media.public_id, resource_type=resource_type)
+                        print(f"Deleted Cloudinary asset: {media.public_id}")
+                    except Exception as e:
+                        # Continue with deletion even if Cloudinary fails
+                        pass
             
         await post.delete()
 
@@ -91,8 +140,9 @@ class PostService:
             media = await Media.get(PydanticObjectId(media_id))
             if not media or media.owner_id != user_id:
                 raise MediaValidationException(f"Invalid media_id: {media_id}")
-            if media.status != MediaStatus.ACTIVE:
-                raise MediaValidationException(f"Media is not ready: {media_id}")
+            allowed_statuses = [MediaStatus.ACTIVE, MediaStatus.PENDING]
+            if media.status not in allowed_statuses:
+                raise MediaValidationException(f"Media is not ready (Status: {media.status}): {media_id}")
             media_objects.append(media)
 
         location = None

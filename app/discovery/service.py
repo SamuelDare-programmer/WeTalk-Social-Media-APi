@@ -1,9 +1,10 @@
 from app.discovery.models import Hashtag, PostTag, Location
 from app.posts.models import Post
-from app.core.db.models import User, UserFollows, FollowStatus
+from app.core.db.models import User, UserFollows, UserBlocks, FollowStatus
 from beanie import PydanticObjectId
 from typing import List, Dict, Any, Optional
 import httpx
+import asyncio
 from app.core.config import settings
 
 class DiscoveryService:
@@ -117,7 +118,7 @@ class DiscoveryService:
         
         return results[:limit]
 
-    async def get_posts_by_hashtag(self, hashtag_name: str, limit: int = 20, offset: int = 0) -> List[Post]:
+    async def get_posts_by_hashtag(self, hashtag_name: str, limit: int = 20, offset: int = 0, media_type: Optional[str] = None) -> List[Post]:
         # 1. Find Hashtag ID
         tag = await Hashtag.find_one({"name": hashtag_name})
         if not tag:
@@ -128,7 +129,84 @@ class DiscoveryService:
         post_ids = [PydanticObjectId(pt.post_id) for pt in post_tags]
         
         # 3. Fetch Posts
-        posts = await Post.find({"_id": {"$in": post_ids}}, fetch_links=True).to_list()
+        query = {"_id": {"$in": post_ids}}
+        
+        # 4. Media Type Filter (requires join/lookup if we want to be strict, but for explorer we can fetch and filter or add simpler check)
+        # For hashtags, we'll fetch and then filter if media_type is provided, though pagination might be slightly off.
+        # Better: use aggregation pipeline for strict filtering.
+        
+        posts = await Post.find(query, fetch_links=True).to_list()
+        
+        if media_type:
+            posts = [p for p in posts if p.media and any(str(m.file_type) == media_type for m in p.media)]
+            
+        return posts
+
+    async def get_suggested_users(self, current_user_id: str, limit: int = 3) -> List[Dict[str, Any]]:
+        # 1. Get IDs of users already followed
+        following = await UserFollows.find({
+            "follower_id": current_user_id,
+            "status": FollowStatus.ACTIVE
+        }).to_list()
+        following_ids = {f.following_id for f in following}
+        following_ids.add(current_user_id) # Exclude self
+        
+        # 2. Find top users by follower count who are NOT in following_ids
+        top_users = await User.find({
+            "_id": {"$nin": [PydanticObjectId(uid) for uid in following_ids if PydanticObjectId.is_valid(uid)]}
+        }).sort("-followers_count").limit(limit).to_list()
+        
+        # 3. Format results
+        return [{
+            "id": str(u.id),
+            "username": u.username,
+            "full_name": f"{u.first_name} {u.last_name}".strip(),
+            "avatar_url": u.avatar_url,
+            "followers_count": u.followers_count
+        } for u in top_users]
+
+    async def get_explore_feed(self, current_user_id: str, limit: int = 20, offset: int = 0, media_type: Optional[str] = None) -> List[Post]:
+        """
+        Retrieves engaging content from users the current user does not follow.
+        """
+        # 1. Get Following and Blocked IDs
+        following_task = UserFollows.find({
+            "follower_id": current_user_id,
+            "status": FollowStatus.ACTIVE
+        }).to_list()
+        
+        blocked_task = UserBlocks.find({
+            "$or": [
+                {"blocker_id": current_user_id},
+                {"blocked_id": current_user_id}
+            ]
+        }).to_list()
+        
+        following_records, blocked_records = await asyncio.gather(following_task, blocked_task)
+        
+        excluded_user_ids = {current_user_id}
+        excluded_user_ids.update(r.following_id for r in following_records)
+        excluded_user_ids.update(r.blocker_id for r in blocked_records)
+        excluded_user_ids.update(r.blocked_id for r in blocked_records)
+
+        # 2. Query Posts
+        # Strategy: Freshness + Engagement weighting
+        query = {"owner_id": {"$nin": list(excluded_user_ids)}}
+        
+        # If media_type is provided, we use aggregation to filter joined media
+        if media_type:
+            # Note: Complex aggregation for explore feed to handle links + filtering
+            # For now, we'll use a simpler approach: fetch more and filter in memory if limit is small
+            # Or ideally use $lookup. Since this is an explorer, fetching slightly more is fine.
+            posts = await Post.find(query, fetch_links=True).sort("-likes_count", "-comments_count", "-created_at").skip(offset).limit(limit * 5).to_list()
+            filtered = [p for p in posts if p.media and any(m.file_type == media_type for m in p.media)]
+            return filtered[:limit]
+            
+        posts = await Post.find(
+            query,
+            fetch_links=True
+        ).sort("-likes_count", "-comments_count", "-created_at").skip(offset).limit(limit).to_list()
+        
         return posts
 
     # Helper to process tags when a post is created (to be called by PostService ideally)

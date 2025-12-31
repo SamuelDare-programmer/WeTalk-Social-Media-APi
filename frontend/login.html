@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Login Screen</title>
+    <script src="js/tailwindcss.js"></script>
+    <script>
+        if (typeof tailwind !== 'undefined') {
+            tailwind.config = {
+                darkMode: "class",
+                theme: {
+                    extend: {
+                        colors: {
+                            primary: "#334BA2",
+                            "primary-hover": "#253a85",
+                            "background-dark": "#1a1a2e",
+                            "card-dark": "#24243e",
+                            "text-dark": "#e0e0e0",
+                            "input-border-dark": "#4a4a6a",
+                            "accent-blue": "#7987C2",
+                        },
+                        fontFamily: {
+                            display: ["Montserrat", "sans-serif"],
+                            body: ["Montserrat", "sans-serif"],
+                        },
+                        borderRadius: {
+                            DEFAULT: "0.75rem",
+                        },
+                    },
+                },
+            };
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+</head>
+
+<body
+    class="bg-gray-50 dark:bg-background-dark font-body antialiased min-h-screen flex items-center justify-center p-4 text-gray-900 dark:text-text-dark transition-colors duration-300">
+    <!-- Glassmorphism Notification Toast -->
+    <div id="notification-toast"
+        class="fixed top-6 left-1/2 transform -translate-x-1/2 z-[60] transition-all duration-500 opacity-0 -translate-y-full pointer-events-none">
+        <div
+            class="backdrop-blur-xl bg-white/60 dark:bg-black/60 border border-white/40 dark:border-white/10 shadow-2xl rounded-2xl px-6 py-4 flex items-center gap-4 min-w-[320px] max-w-md">
+            <div id="notification-icon-container"
+                class="flex items-center justify-center w-10 h-10 rounded-full bg-white/50 dark:bg-white/10 shadow-inner">
+                <span id="notification-icon" class="material-symbols-outlined text-2xl">check</span>
+            </div>
+            <div class="flex-1">
+                <h4 id="notification-title" class="font-bold text-sm text-gray-900 dark:text-white font-display">Success
+                </h4>
+                <p id="notification-message" class="text-xs text-gray-700 dark:text-gray-300 font-medium mt-0.5">Login
+                    successful</p>
+            </div>
+        </div>
+    </div>
+
+    <button aria-label="Toggle Theme"
+        class="fixed top-6 right-6 z-50 p-3 rounded-full bg-white dark:bg-card-dark text-gray-800 dark:text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 border border-gray-200 dark:border-gray-700 group focus:outline-none"
+        onclick="document.documentElement.classList.toggle('dark')">
+        <span
+            class="material-symbols-outlined text-2xl group-hover:rotate-12 transition-transform duration-300 dark:hidden">dark_mode</span>
+        <span
+            class="material-symbols-outlined text-2xl group-hover:-rotate-12 transition-transform duration-300 hidden dark:block">light_mode</span>
+    </button>
+    <div
+        class="bg-white dark:bg-card-dark rounded-2xl shadow-2xl w-full max-w-5xl flex overflow-hidden min-h-[600px] flex-col md:flex-row relative transition-colors duration-300">
+        <div
+            class="w-full md:w-1/2 relative bg-gray-900 overflow-hidden order-1 md:order-1 flex flex-col justify-center items-center text-white p-8">
+            <div class="absolute inset-0 z-0">
+                <img alt="Abstract blue and purple neon geometric background"
+                    class="w-full h-full object-cover opacity-80 mix-blend-overlay"
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuBV_Ht34b0kebMA-ZpRg1jhfIGLLKd_ltwLJSDM2Am-xyLbkR9Uo3jsy-teR_bq5NvcpQYHwnUblAhonOI_UV2evIMe4KDgTardZjXQ8QzL7xG2G5A26gTIfiwIBjvFwc2sXY7h97Aw67FnfvJM-P9Ly2r44Kmvcxr_3q2xmEz8vioPWXSEtjNXyq9NiaNVdtalwGdcq8m5ukj50I7VmsI9OkIK9vE6k95e5EU4xsbD4SFbwijvhV-YDYnF0q8OfkDJXpNW0p1rUtxd" />
+                <div class="absolute inset-0 bg-primary/90 via-purple-900/80 to-black/90 mix-blend-multiply"></div>
+                <div class="absolute top-0 right-0 w-full h-full bg-gradient-to-bl from-accent-blue/20 to-transparent">
+                </div>
+            </div>
+            <div
+                class="relative z-10 text-center max-w-md backdrop-blur-sm bg-black/20 p-8 rounded-2xl border border-white/10 shadow-2xl">
+                <div
+                    class="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-6 backdrop-blur-md border border-white/20">
+                    <span class="material-symbols-outlined text-3xl text-white">grid_view</span>
+                </div>
+                <h2
+                    class="text-4xl md:text-5xl font-bold mb-4 font-display tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-300 drop-shadow-md">
+                    Welcome <br /> back!
+                </h2>
+                <p class="text-blue-100 text-lg font-light leading-relaxed mb-8">
+                    Reconnect with your workspace and pick up right where you left off.
+                </p>
+                <div
+                    class="absolute -top-10 -left-10 w-32 h-32 bg-purple-500 rounded-full mix-blend-screen filter blur-3xl opacity-30 animate-pulse">
+                </div>
+                <div class="absolute -bottom-10 -right-10 w-32 h-32 bg-blue-500 rounded-full mix-blend-screen filter blur-3xl opacity-30 animate-pulse"
+                    style="animation-delay: 1s;"></div>
+            </div>
+        </div>
+        <div class="w-full md:w-1/2 p-8 md:p-12 lg:p-16 flex flex-col justify-center order-2 md:order-2">
+            <div class="mb-8">
+                <h1
+                    class="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2 font-display transition-colors duration-300">
+                    Login</h1>
+                <p class="text-gray-500 dark:text-gray-400 text-sm transition-colors duration-300">Please enter your
+                    login details to log in.</p>
+            </div>
+            <form id="login-form" class="space-y-6">
+                <div class="space-y-1">
+                    <label
+                        class="block text-xs font-medium text-gray-700 dark:text-gray-300 ml-1 transition-colors duration-300"
+                        for="username">Username</label>
+                    <div class="relative">
+                        <input
+                            class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-input-border-dark bg-transparent text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300 text-sm"
+                            id="username" name="username" placeholder="Enter your username" type="text" />
+                        <span
+                            class="absolute right-3 top-3 text-gray-500 material-symbols-outlined text-lg pointer-events-none">person</span>
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <label
+                        class="block text-xs font-medium text-gray-700 dark:text-gray-300 ml-1 transition-colors duration-300"
+                        for="password">Password</label>
+                    <div class="relative">
+                        <input
+                            class="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-input-border-dark bg-transparent text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-300 text-sm"
+                            id="password" name="password" placeholder="Enter your password" type="password" />
+                        <span
+                            class="absolute right-3 top-3 text-gray-500 material-symbols-outlined text-lg cursor-pointer hover:text-primary transition-colors">visibility_off</span>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between text-xs md:text-sm">
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input id="remember-me"
+                            class="form-checkbox h-4 w-4 text-primary rounded border-gray-300 dark:border-gray-600 focus:ring-primary bg-gray-100 dark:bg-gray-700 transition-colors duration-300"
+                            type="checkbox" />
+                        <span class="text-gray-600 dark:text-gray-400 select-none transition-colors duration-300">Keep
+                            me logged in</span>
+                    </label>
+                    <a class="text-accent-blue hover:text-blue-400 font-medium transition-colors" href="#">Forgot
+                        password?</a>
+                </div>
+                <button
+                    class="w-full bg-primary hover:bg-primary-hover text-white font-bold py-3.5 px-4 rounded-lg shadow-md hover:shadow-lg transform active:scale-[0.99] transition-all duration-200"
+                    type="submit">
+                    Log in
+                </button>
+            </form>
+            <div class="relative my-8">
+                <div class="absolute inset-0 flex items-center">
+                    <div class="w-full border-t border-gray-300 dark:border-gray-700 transition-colors duration-300">
+                    </div>
+                </div>
+                <div class="relative flex justify-center text-xs">
+                    <span
+                        class="px-3 bg-white dark:bg-card-dark text-gray-500 dark:text-gray-400 transition-colors duration-300">or
+                        continue with</span>
+                </div>
+            </div>
+            <div class="flex justify-center space-x-6">
+                <button
+                    class="flex items-center justify-center w-12 h-12 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 shadow-sm group-hover:scale-105">
+                    <img alt="Google" class="w-6 h-6"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUEsrRgd-B7oyk6eGkC2MnOW_rm4pKVV5V6VjcXcp4bu4TY_NU70ik3-v3Zhx9tutWLoHRtI3E7-pkfT-dvwjwsMlMow9j5PzsCb_NOBdhfntF-fTvLYPv_6NRn7_wG9wYxK_O79GaesorpBXFiMth6TTPWZfi3r3dix404j9hCD8BORrrUEOWVyN2iG7m3fO-2Ek1AKeE1F54_IiDvsw0CmwTmKc9MBcedzPUdxY_hS-z_hvxsLj-gmA6yYZUczR0dkDtGDXHyBdS" />
+                </button>
+                <button
+                    class="flex items-center justify-center w-12 h-12 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 shadow-sm group-hover:scale-105 delay-75">
+                    <i class="fab fa-facebook-f text-[#1877F2] text-xl"></i>
+                </button>
+                <button
+                    class="flex items-center justify-center w-12 h-12 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 shadow-sm group-hover:scale-105 delay-100">
+                    <i class="fab fa-apple text-gray-900 dark:text-white text-xl transition-colors duration-300"></i>
+                </button>
+                <button
+                    class="flex items-center justify-center w-12 h-12 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300 shadow-sm group-hover:scale-105 delay-150">
+                    <i class="fab fa-twitter text-[#1DA1F2] text-xl"></i>
+                </button>
+            </div>
+            <div class="mt-8 text-center text-sm text-gray-500 dark:text-gray-400 transition-colors duration-300">
+                Don't have an account?
+                <a class="text-accent-blue font-bold hover:underline" href="sign_up.html">Create account</a>
+            </div>
+        </div>
+    </div>
+    <script>
+        function showNotification(title, message, type = 'success') {
+            const toast = document.getElementById('notification-toast');
+            const icon = document.getElementById('notification-icon');
+            const iconContainer = document.getElementById('notification-icon-container');
+            const titleEl = document.getElementById('notification-title');
+            const msgEl = document.getElementById('notification-message');
+
+            titleEl.textContent = title;
+            msgEl.textContent = message;
+
+            if (type === 'success') {
+                icon.textContent = 'check';
+                icon.className = 'material-symbols-outlined text-2xl text-green-600 dark:text-green-400';
+                iconContainer.className = 'flex items-center justify-center w-10 h-10 rounded-full bg-green-100/50 dark:bg-green-900/30 shadow-inner';
+            } else {
+                icon.textContent = 'priority_high';
+                icon.className = 'material-symbols-outlined text-2xl text-red-600 dark:text-red-400';
+                iconContainer.className = 'flex items-center justify-center w-10 h-10 rounded-full bg-red-100/50 dark:bg-red-900/30 shadow-inner';
+            }
+
+            toast.classList.remove('opacity-0', '-translate-y-full', 'pointer-events-none');
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', '-translate-y-full', 'pointer-events-none');
+            }, 4000);
+        }
+
+        document.getElementById('login-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const rememberMe = document.getElementById('remember-me').checked;
+
+            const formData = new URLSearchParams();
+            formData.append('username', username);
+            formData.append('password', password);
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/v1/auth/users/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const storage = rememberMe ? localStorage : sessionStorage;
+
+                    storage.setItem('access_token', data.access_token);
+                    if (data.refresh_token) {
+                        storage.setItem('refresh_token', data.refresh_token);
+                    }
+
+                    showNotification('Welcome back!', 'Login successful. Redirecting...', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'feed.html';
+                    }, 1500);
+                } else {
+                    const error = await response.json();
+                    if (response.status === 404) {
+                        showNotification('Login Failed', 'User not found. Please check your credentials.', 'error');
+                    } else {
+                        let errorMessage = 'Unknown error';
+                        if (error.detail) {
+                            errorMessage = typeof error.detail === 'string' ? error.detail : JSON.stringify(error.detail);
+                        } else if (error.message) {
+                            errorMessage = error.message;
+                        } else {
+                            errorMessage = JSON.stringify(error);
+                        }
+                        showNotification('Login Failed', errorMessage, 'error');
+                    }
+                }
+            } catch (err) {
+                console.error('Login error:', err);
+                showNotification('Connection Error', 'An error occurred while connecting to the server.', 'error');
+            }
+        });
+    </script>
+</body>
+
+</html>

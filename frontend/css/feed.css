@@ -1,0 +1,176 @@
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #232f48;
+    border-radius: 20px;
+}
+
+/* Skeleton Pulse Animation */
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 0.5;
+    }
+
+    50% {
+        opacity: 0.8;
+    }
+}
+
+.animate-pulse-slow {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Heart Pop Animation */
+@keyframes heartPop {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+
+    50% {
+        transform: scale(1.4);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 0;
+    }
+}
+
+.heart-pop-container {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.heart-pop-active {
+    animation: heartPop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* Video Progress Bar */
+.video-progress-container {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.2);
+    z-index: 40;
+}
+
+.video-progress-bar {
+    height: 100%;
+    background: #6366f1;
+    width: 0%;
+    transition: width 0.1s linear;
+}
+
+/* Story Ring Gradient */
+.story-ring {
+    background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+    padding: 2px;
+}
+
+/* Immersive Video Mode Styles */
+.immersive-video-active {
+    overflow: hidden !important;
+}
+
+#immersive-overlay {
+    background: #000;
+    z-index: 100;
+}
+
+#comments-modal {
+    z-index: 200;
+}
+
+.video-snap-container {
+    scroll-snap-type: y mandatory;
+    height: 100vh;
+    width: 100%;
+    overflow-y: scroll !important;
+    position: relative;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+}
+
+.video-snap-container::-webkit-scrollbar {
+    display: none;
+    /* Chrome/Safari */
+}
+
+.video-snap-item {
+    scroll-snap-align: start;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* New Sidebar Styles */
+.right-sidebar {
+    position: sticky;
+    top: 24px;
+    height: fit-content;
+}
+
+.suggestion-card {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dark .suggestion-card {
+    background: rgba(30, 41, 59, 0.5);
+}
+
+/* Glassmorphism for Feed Items */
+.feed-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.feed-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+.dark .feed-card:hover {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+}
+
+/* Interaction Buttons */
+.interaction-btn {
+    @apply flex items-center gap-2 p-2 rounded-xl transition-all duration-200;
+}
+
+.interaction-btn:hover {
+    @apply bg-slate-100 dark:bg-white/5;
+}
+
+/* Floating Action Menu Refinement */
+#fab-container {
+    filter: drop-shadow(0 4px 12px rgba(99, 102, 241, 0.3));
+}
+
+#fab-toggle {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+}

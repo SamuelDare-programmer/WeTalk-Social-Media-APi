@@ -33,7 +33,7 @@ class UserService:
         
         # FIX 2: Ensure protocol is present (unless handled in settings)
         # Using https:// explicitly is safer if settings.DOMAIN_NAME is just "example.com"
-        link = f"https://{settings.DOMAIN_NAME}/api/v1/auth/verify/{token}"
+        link = f"https://{settings.DOMAIN_NAME}/api/v1/auth/users/verify/{token}"
         
         template_body = {"username": new_user.username, "link": link}
         
@@ -109,8 +109,6 @@ class UserService:
 
     async def verify_user_email(self, token: str):
         token_data = utils.decode_url_safe_token(token)
-        print(token_data)
-        print(type(token_data))
         email = token_data.get("email")
         
         user = await self.get_user(email)

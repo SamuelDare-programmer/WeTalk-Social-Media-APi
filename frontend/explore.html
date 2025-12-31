@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Explore - WeTalk</title>
+
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <script src="js/tailwindcss.js"></script>
+
+    <script id="tailwind-config">
+        if (typeof tailwind !== 'undefined') {
+            tailwind.config = {
+                darkMode: "class",
+                theme: {
+                    extend: {
+                        colors: {
+                            primary: "#6366f1",
+                            secondary: "#ec4899",
+                            "background-light": "#f3f4f6",
+                            "background-dark": "#0f172a",
+                            "surface-light": "#ffffff",
+                            "surface-dark": "#1e293b",
+                            "border-light": "#e2e8f0",
+                            "border-dark": "#334155",
+                            "text-secondary": "#94a3b8",
+                        },
+                        fontFamily: {
+                            "display": ["Spline Sans", "sans-serif"],
+                        }
+                    },
+                },
+            }
+        }
+    </script>
+
+    <style>
+        .explore-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+        }
+
+        @media (min-width: 768px) {
+            .explore-grid {
+                gap: 28px;
+            }
+        }
+
+        .explore-item {
+            aspect-ratio: 1 / 1;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .explore-item.tall {
+            grid-row: span 2;
+            aspect-ratio: auto;
+        }
+
+        .explore-item img,
+        .explore-item video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .explore-item:hover img,
+        .explore-item:hover video {
+            transform: scale(1.05);
+        }
+
+        .explore-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            color: white;
+            font-weight: bold;
+        }
+
+        .explore-item:hover .explore-overlay {
+            opacity: 1;
+        }
+
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: rgba(156, 163, 175, 0.5);
+            border-radius: 20px;
+        }
+
+        /* Skeleton Pulse Animation */
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 0.5;
+            }
+
+            50% {
+                opacity: 0.8;
+            }
+        }
+
+        .animate-pulse-slow {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        /* Immersive Video Mode Styles */
+        .immersive-video-active {
+            overflow: hidden !important;
+        }
+
+        .video-snap-container {
+            scroll-snap-type: y mandatory;
+            height: 100vh;
+            overflow-y: scroll;
+        }
+
+        .video-snap-item {
+            scroll-snap-align: start;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display flex h-screen overflow-hidden antialiased">
+    <!-- Navbar (Injected by navbar.js) -->
+    <script src="js/navbar.js"></script>
+
+    <div class="flex-1 overflow-y-auto custom-scrollbar pt-6 pb-20">
+        <div class="max-w-[935px] mx-auto px-4">
+            <!-- Search Bar -->
+            <div class="mb-8 relative">
+                <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                    <span class="material-symbols-outlined text-text-secondary">search</span>
+                </div>
+                <input type="text" id="explore-search"
+                    class="w-full bg-white dark:bg-surface-dark border border-slate-200 dark:border-border-dark rounded-xl py-3 pl-12 pr-4 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
+                    placeholder="Search accounts, hashtags, or places...">
+
+                <!-- Search Results Dropdown -->
+                <div id="search-results"
+                    class="hidden absolute top-full left-0 right-0 mt-2 bg-white dark:bg-surface-dark border border-slate-200 dark:border-border-dark rounded-xl shadow-xl z-50 overflow-hidden">
+                    <div id="results-list" class="max-h-[400px] overflow-y-auto">
+                        <!-- Results injected here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Media Type Tabs -->
+            <div class="flex items-center justify-center gap-8 mb-8 border-b border-slate-200 dark:border-border-dark">
+                <button onclick="setTab('all')" id="tab-all"
+                    class="tab-btn pb-3 text-sm font-semibold border-b-2 border-primary text-primary transition-all">
+                    <span class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[20px]">grid_view</span>
+                        ALL
+                    </span>
+                </button>
+                <button onclick="setTab('image')" id="tab-image"
+                    class="tab-btn pb-3 text-sm font-semibold border-b-2 border-transparent text-text-secondary hover:text-slate-900 dark:hover:text-white transition-all">
+                    <span class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[20px]">image</span>
+                        PHOTOS
+                    </span>
+                </button>
+                <button onclick="setTab('video')" id="tab-video"
+                    class="tab-btn pb-3 text-sm font-semibold border-b-2 border-transparent text-text-secondary hover:text-slate-900 dark:hover:text-white transition-all">
+                    <span class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[20px]">movie</span>
+                        VIDEOS
+                    </span>
+                </button>
+            </div>
+
+            <!-- Trending Tags -->
+            <div class="flex gap-2 overflow-x-auto pb-6 hide-scrollbar" id="trending-tags">
+                <!-- Tags injected here -->
+            </div>
+
+            <!-- Explore Grid -->
+            <div class="explore-grid" id="explore-container">
+                <!-- Posts injected here -->
+                <!-- Skeletons -->
+                <div class="explore-item animate-pulse bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
+                <div class="explore-item animate-pulse bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
+                <div class="explore-item animate-pulse bg-slate-200 dark:bg-slate-800 rounded-lg tall"></div>
+                <div class="explore-item animate-pulse bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
+                <div class="explore-item animate-pulse bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
+                <div class="explore-item animate-pulse bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
+            </div>
+
+            <div id="load-more-trigger" class="h-20 flex items-center justify-center hidden">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Immersive Video Overlay -->
+    <div id="immersive-overlay" class="fixed inset-0 z-[110] bg-black hidden">
+        <button onclick="toggleImmersiveMode()"
+            class="absolute top-6 right-6 z-50 text-white bg-white/10 hover:bg-white/20 p-2 rounded-full backdrop-blur-md transition-all">
+            <span class="material-symbols-outlined text-[28px]">close</span>
+        </button>
+        <div id="immersive-video-container" class="video-snap-container h-full w-full">
+            <!-- Video items will be injected here -->
+        </div>
+    </div>
+
+    <!-- Post Detail Modal (Instagram Style) -->
+    <div id="post-modal"
+        class="fixed inset-0 z-[100] bg-black/80 hidden items-center justify-center p-4 md:p-10 backdrop-blur-sm">
+        <div
+            class="max-w-6xl w-full bg-white dark:bg-surface-dark rounded-xl overflow-hidden shadow-2xl flex flex-col md:flex-row h-full max-h-[800px]">
+            <!-- Left: Media Area -->
+            <div class="flex-1 bg-black flex items-center justify-center relative min-h-[300px]">
+                <img id="modal-image" class="max-w-full max-h-full object-contain">
+                <video id="modal-video" class="hidden max-w-full max-h-full" controls loop></video>
+
+                <!-- Media Navigation (for carousels later) -->
+                <button id="modal-prev"
+                    class="hidden absolute left-4 bg-black/30 p-2 rounded-full text-white hover:bg-black/50"><span
+                        class="material-symbols-outlined">chevron_left</span></button>
+                <button id="modal-next"
+                    class="hidden absolute right-4 bg-black/30 p-2 rounded-full text-white hover:bg-black/50"><span
+                        class="material-symbols-outlined">chevron_right</span></button>
+            </div>
+
+            <!-- Right: Details Area -->
+            <div
+                class="w-full md:w-[400px] flex flex-col bg-white dark:bg-surface-dark border-l border-slate-100 dark:border-border-dark">
+                <!-- User Header -->
+                <div class="p-4 border-b border-slate-100 dark:border-border-dark flex items-center justify-between">
+                    <div class="flex items-center gap-3 cursor-pointer" id="modal-user-link">
+                        <div id="modal-avatar-container"
+                            class="size-9 rounded-full bg-center bg-cover border border-slate-100 dark:border-border-dark">
+                        </div>
+                        <div class="flex flex-col">
+                            <span id="modal-username" class="font-bold text-sm hover:underline"></span>
+                            <span id="modal-location" class="text-[10px] text-text-secondary"></span>
+                        </div>
+                    </div>
+                    <button onclick="closeModal()"
+                        class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+                        <span class="material-symbols-outlined text-slate-500">close</span>
+                    </button>
+                </div>
+
+                <!-- Comments/Caption Area -->
+                <div class="flex-1 overflow-y-auto p-4 custom-scrollbar" id="modal-scroll-area">
+                    <!-- Caption -->
+                    <div class="flex gap-3 mb-6">
+                        <div id="modal-caption-avatar" class="size-8 rounded-full shrink-0 bg-center bg-cover"></div>
+                        <div class="text-sm">
+                            <span id="modal-caption-user" class="font-bold mr-2"></span>
+                            <span id="modal-caption" class="text-slate-800 dark:text-slate-200"></span>
+                            <p id="modal-time" class="text-[10px] text-text-secondary mt-2"></p>
+                        </div>
+                    </div>
+
+                    <!-- Comments Container -->
+                    <div id="modal-comments" class="space-y-6">
+                        <!-- Comments will be injected here -->
+                    </div>
+                </div>
+
+                <!-- Action Area -->
+                <div class="p-4 border-t border-slate-100 dark:border-border-dark space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex gap-4">
+                            <button id="modal-like-btn"
+                                class="hover:scale-110 active:scale-125 transition-transform"><span
+                                    class="material-symbols-outlined">favorite</span></button>
+                            <button id="modal-comment-btn" class="hover:scale-110 transition-transform"><span
+                                    class="material-symbols-outlined">chat_bubble</span></button>
+                            <button id="modal-share-btn" class="hover:scale-110 transition-transform"><span
+                                    class="material-symbols-outlined">send</span></button>
+                        </div>
+                        <button id="modal-bookmark-btn" class="hover:scale-110 transition-transform"><span
+                                class="material-symbols-outlined">bookmark</span></button>
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold" id="modal-likes-count">0 likes</p>
+                    </div>
+                </div>
+
+                <!-- Add Comment Input -->
+                <div class="p-4 border-t border-slate-100 dark:border-border-dark">
+                    <form id="modal-comment-form" class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-slate-400">sentiment_satisfied</span>
+                        <input type="text" placeholder="Add a comment..."
+                            class="flex-1 bg-transparent border-none focus:ring-0 text-sm outline-none">
+                        <button type="submit" class="text-primary font-bold text-sm opacity-50 cursor-default"
+                            disabled>Post</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
+        const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+
+        if (!token) window.location.href = 'login.html';
+
+        let offset = 0;
+        const limit = 18;
+        let loading = false;
+        let hasMore = true;
+        let loadedExplorePosts = [];
+        let isImmersive = false;
+        let currentTab = 'all';
+        let lastTap = 0;
+
+        const exploreContainer = document.getElementById('explore-container');
+        const searchInput = document.getElementById('explore-search');
+        const searchResults = document.getElementById('search-results');
+        const resultsList = document.getElementById('results-list');
+
+        async function fetchExplore() {
+            if (loading || !hasMore) return;
+            loading = true;
+            document.getElementById('load-more-trigger').classList.remove('hidden');
+
+            try {
+                const url = new URL(window.location.href);
+                const tag = url.searchParams.get('tag');
+
+                let endpoint = `${API_BASE_URL}/discovery/explore?limit=${limit}&offset=${offset}`;
+                if (currentTab !== 'all') {
+                    endpoint += `&type=${currentTab}`;
+                }
+
+                if (tag) {
+                    endpoint = `${API_BASE_URL}/discovery/tags/${tag}?limit=${limit}&offset=${offset}`;
+                    if (currentTab !== 'all') endpoint += `&type=${currentTab}`;
+                    searchInput.value = `#${tag}`;
+                }
+
+                const res = await fetch(endpoint, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (res.ok) {
+                    const posts = await res.json();
+                    if (offset === 0) {
+                        exploreContainer.innerHTML = '';
+                        loadedExplorePosts = [];
+                    }
+
+                    if (posts.length < limit) hasMore = false;
+                    offset += posts.length;
+                    loadedExplorePosts.push(...posts);
+
+                    renderGrid(posts);
+                }
+            } catch (e) { console.error(e); }
+            finally {
+                loading = false;
+                document.getElementById('load-more-trigger').classList.add('hidden');
+            }
+        }
+
+        function renderGrid(posts) {
+            posts.forEach((post, idx) => {
+                const postId = post.id || post._id; // Handle potential ID alias issues
+                if (!postId) return;
+
+                const media = post.media?.[0] || {};
+                const url = media.view_link || media.url;
+
+                // Robust video detection
+                const isVideo = (media.media_type && media.media_type.startsWith('video')) ||
+                    (url && url.match(/\.(mp4|webm|mov|mkv)$/i));
+
+                // For explore feel, some items are tall
+                const isTall = isVideo && (idx % 8 === 2);
+
+                let contentHtml = '';
+                let typeIcon = '';
+
+                // Check for tag search
+                const isTagSearch = new URL(window.location.href).searchParams.has('tag');
+
+                if (url) {
+                    if (isVideo) {
+                        contentHtml = `<video src="${url}" muted loop class="w-full h-full object-cover" onmouseenter="this.play()" onmouseleave="this.pause()"></video>`;
+                        typeIcon = '<span class="material-symbols-outlined text-[24px]">play_circle</span>';
+                    } else {
+                        contentHtml = `<img src="${url}" loading="lazy" class="w-full h-full object-cover">`;
+                        if (post.media.length > 1) typeIcon = '<span class="material-symbols-outlined text-[20px]">filter_none</span>';
+                    }
+                } else {
+                    // Conditional Text Display: Only show text posts if searching for a tag
+                    if (!isTagSearch) return;
+
+                    // Text Post - Glassmorphism
+                    const gradients = [
+                        'from-indigo-500 via-purple-500 to-pink-500',
+                        'from-cyan-500 via-blue-500 to-indigo-500',
+                        'from-orange-400 via-red-500 to-pink-500',
+                        'from-emerald-400 via-teal-500 to-cyan-500'
+                    ];
+                    const gradient = gradients[postId.charCodeAt(postId.length - 1) % gradients.length];
+
+                    contentHtml = `
+                        <div class="w-full h-full bg-gradient-to-br ${gradient} p-4 flex items-center justify-center relative overflow-hidden">
+                             <!-- Glass effect -->
+                             <div class="absolute inset-0 bg-white/10 backdrop-blur-sm"></div>
+                             <p class="relative z-10 text-white font-bold text-center line-clamp-6 drop-shadow-md text-sm md:text-base px-2">
+                                 ${post.caption || post.content || ''}
+                             </p>
+                        </div>
+                    `;
+                    typeIcon = '<span class="material-symbols-outlined text-[20px]">notes</span>';
+                }
+
+                const html = `
+                    <div class="explore-item ${isTall ? 'tall' : ''} group/item" onclick="handleGridClick(event, '${postId}', ${!!isVideo})">
+                        ${contentHtml}
+                        <div class="absolute top-3 right-3 z-20 text-white drop-shadow-md">
+                            ${typeIcon}
+                        </div>
+                        <div class="explore-overlay bg-black/40 opacity-0 group-hover/item:opacity-100 transition-opacity z-30">
+                            <div class="flex items-center gap-6">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined filled text-2xl" style="font-variation-settings: 'FILL' 1;">favorite</span>
+                                    <span class="text-sm font-bold text-white">${post.likes_count || 0}</span>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined filled text-2xl" style="font-variation-settings: 'FILL' 1;">chat_bubble</span>
+                                    <span class="text-sm font-bold text-white">${post.comments_count || 0}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                exploreContainer.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+        function handleGridClick(event, postId, isVideo) {
+            const now = Date.now();
+            const DOUBLE_TAP_DELAY = 300;
+
+            if (now - lastTap < DOUBLE_TAP_DELAY) {
+                // Double tap
+                if (isVideo) {
+                    toggleImmersiveMode(postId);
+                }
+                lastTap = 0; // Reset
+            } else {
+                // Single tap (wait to see if it's a double tap)
+                lastTap = now;
+                setTimeout(() => {
+                    if (lastTap === now) {
+                        openPost(postId);
+                    }
+                }, DOUBLE_TAP_DELAY);
+            }
+        }
+
+        function setTab(tab) {
+            if (currentTab === tab) return;
+            currentTab = tab;
+
+            // Update UI
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('text-primary', 'border-primary');
+                btn.classList.add('text-text-secondary', 'border-transparent');
+            });
+            const activeBtn = document.getElementById(`tab-${tab}`);
+            activeBtn.classList.remove('text-text-secondary', 'border-transparent');
+            activeBtn.classList.add('text-primary', 'border-primary');
+
+            // Reset and fetch
+            offset = 0;
+            hasMore = true;
+            exploreContainer.innerHTML = '';
+            fetchExplore();
+        }
+
+        window.updateCarouselDots = function (carouselId, el) {
+            const index = Math.round(el.scrollLeft / el.offsetWidth);
+            const dots = document.getElementById(carouselId + '-dots');
+            if (!dots) return;
+
+            Array.from(dots.children).forEach((dot, i) => {
+                if (i === index) {
+                    dot.classList.add('bg-white', 'scale-125');
+                    dot.classList.remove('bg-white/50');
+                } else {
+                    dot.classList.remove('bg-white', 'scale-125');
+                    dot.classList.add('bg-white/50');
+                }
+            });
+        }
+
+        // --- Shorts / Immersive Mode ---
+        function pauseAllVideos() {
+            document.querySelectorAll('video').forEach(v => v.pause());
+        }
+
+        async function toggleImmersiveMode(startPostId) {
+            const overlay = document.getElementById('immersive-overlay');
+            isImmersive = !isImmersive;
+            pauseAllVideos();
+
+            if (isImmersive) {
+                overlay.classList.remove('hidden');
+                document.body.classList.add('immersive-video-active');
+                await loadImmersiveFeed(startPostId);
+            } else {
+                overlay.classList.add('hidden');
+                document.body.classList.remove('immersive-video-active');
+                document.getElementById('immersive-video-container').innerHTML = '';
+            }
+        }
+
+        async function loadImmersiveFeed(startPostId) {
+            const container = document.getElementById('immersive-video-container');
+            // Filter loaded posts for videos
+            const videoPosts = loadedExplorePosts.filter(p => {
+                const media = p.media?.[0] || {};
+                const url = media.view_link || media.url;
+                return (media.media_type && media.media_type.startsWith('video')) || (url && url.match(/\.(mp4|webm|mov)$/i));
+            });
+
+            if (startPostId) {
+                const idx = videoPosts.findIndex(p => p.id === startPostId);
+                if (idx > -1) {
+                    const startPost = videoPosts.splice(idx, 1)[0];
+                    // Fisher-Yates Shuffle for the remaining videos
+                    for (let i = videoPosts.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [videoPosts[i], videoPosts[j]] = [videoPosts[j], videoPosts[i]];
+                    }
+                    videoPosts.unshift(startPost);
+                }
+            }
+
+            container.innerHTML = videoPosts.map(post => {
+                const author = post.author || {};
+                const name = author.username || 'User';
+                const avatar = author.avatar_url || `https://ui-avatars.com/api/?name=${name}&background=random`;
+                const media = post.media?.[0] || {};
+                const videoUrl = media.view_link || media.url;
+
+                return `
+                    <div class="video-snap-item relative bg-black group/shorts" data-post-id="${post.id}">
+                        <video src="${videoUrl}" class="h-full max-w-[450px] w-full object-contain mx-auto" loop playsinline onclick="this.paused ? this.play() : this.pause()"></video>
+                        
+                        <!-- Side Interaction Bar -->
+                        <div class="absolute right-4 bottom-32 flex flex-col gap-6 items-center z-30">
+                            <div class="flex flex-col items-center gap-1 cursor-pointer" onclick="handleLike('${post.id}', this.querySelector('button'))">
+                                <button class="size-12 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/20 transition-all ${post.is_liked ? 'text-pink-500' : ''}">
+                                    <span class="material-symbols-outlined text-[28px] ${post.is_liked ? 'filled' : ''}" style="${post.is_liked ? 'font-variation-settings: \'FILL\' 1;' : ''}">favorite</span>
+                                </button>
+                                <span class="text-xs font-bold text-white drop-shadow-md count">${post.likes_count || 0}</span>
+                            </div>
+                            <div class="flex flex-col items-center gap-1 cursor-pointer" onclick="openPost('${post.id}')">
+                                <div class="size-12 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/20 transition-all">
+                                    <span class="material-symbols-outlined text-[28px]">chat_bubble</span>
+                                </div>
+                                <span class="text-xs font-bold text-white drop-shadow-md">${post.comments_count || 0}</span>
+                            </div>
+                        </div>
+
+                        <!-- Bottom Metadata Overlay -->
+                        <div class="absolute bottom-0 left-0 right-0 p-6 pt-12 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-20">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="size-10 rounded-full border border-white/20 overflow-hidden shadow-lg cursor-pointer" onclick="location.href='profile.html?username=${author.username}'">
+                                    <img src="${avatar}" class="w-full h-full object-cover">
+                                </div>
+                                <span class="text-white font-bold text-base drop-shadow-md cursor-pointer hover:underline" onclick="location.href='profile.html?username=${author.username}'">${author.username}</span>
+                            </div>
+                            <p class="text-white text-sm line-clamp-2 hover:line-clamp-none transition-all drop-shadow-md pb-4 transition-all" onclick="this.classList.toggle('line-clamp-2')">${post.caption || ''}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const video = entry.target.querySelector('video');
+                    if (entry.isIntersecting) {
+                        video.play().catch(() => { });
+                    } else {
+                        video.pause();
+                    }
+                });
+            }, { threshold: 0.8 });
+
+            container.querySelectorAll('.video-snap-item').forEach(item => observer.observe(item));
+        }
+
+        // --- Post Detail Modal ---
+        window.openPost = async function (postId) {
+            const post = loadedExplorePosts.find(p => p.id === postId);
+            if (!post) {
+                // Fetch if not found in loaded posts
+                try {
+                    const res = await fetch(`${API_BASE_URL}/posts/${postId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (res.ok) {
+                        const postData = await res.json();
+                        showPostInModal(postData);
+                    }
+                } catch (e) { console.error(e); }
+                return;
+            }
+            showPostInModal(post);
+        }
+
+        async function showPostInModal(post) {
+            const modal = document.getElementById('post-modal');
+            const imgEl = document.getElementById('modal-image');
+            const vidEl = document.getElementById('modal-video');
+
+            // Text Card Elements (Dynamically add if needed, or use a container)
+            let textCardEl = document.getElementById('modal-text-card');
+            if (!textCardEl) {
+                const mediaContainer = imgEl.parentElement; // .flex-1.bg-black...
+                textCardEl = document.createElement('div');
+                textCardEl.id = 'modal-text-card';
+                textCardEl.className = 'absolute inset-0 hidden flex items-center justify-center p-8';
+                mediaContainer.appendChild(textCardEl);
+            }
+
+            // Carousel Container (Create if missing)
+            let carouselEl = document.getElementById('modal-carousel');
+            if (!carouselEl) {
+                const mediaContainer = imgEl.parentElement;
+                carouselEl = document.createElement('div');
+                carouselEl.id = 'modal-carousel';
+                carouselEl.className = 'absolute inset-0 hidden flex flex-col justify-center';
+                mediaContainer.appendChild(carouselEl);
+            }
+
+            // Hide all first
+            imgEl.classList.add('hidden');
+            vidEl.classList.add('hidden');
+            textCardEl.classList.add('hidden');
+            carouselEl.classList.add('hidden');
+            vidEl.pause();
+
+            // Determine Media Content
+            if (post.media && post.media.length > 1) {
+                // CAROUSEL MODE
+                carouselEl.classList.remove('hidden');
+
+                const carouselId = `modal-carousel-${post.id}`;
+                const slidesHtml = post.media.map(m => {
+                    const url = m.view_link || m.url;
+                    if (!url) return '';
+                    const isVideo = (m.media_type && m.media_type.startsWith('video')) || url.match(/\.(mp4|webm|ogg|mov)$/i);
+                    let inner = '';
+                    if (isVideo) {
+                        inner = `<video src="${url}" controls class="w-full h-full max-h-[90vh] object-contain bg-black mx-auto" preload="metadata"></video>`;
+                    } else {
+                        inner = `<img src="${url}" class="w-full h-full max-h-[90vh] object-contain mx-auto" alt="Post media">`;
+                    }
+                    return `<div class="w-full flex-shrink-0 snap-center flex items-center justify-center bg-black">${inner}</div>`;
+                }).join('');
+
+                const dotsHtml = post.media.map((_, i) => `
+                    <div class="w-1.5 h-1.5 rounded-full bg-white/50 transition-all duration-300 ${i === 0 ? 'bg-white scale-125' : ''}" data-index="${i}"></div>
+                `).join('');
+
+                carouselEl.innerHTML = `
+                    <div class="relative group/carousel w-full h-full">
+                        <div id="${carouselId}" 
+                             class="flex w-full h-full overflow-x-auto snap-x snap-mandatory scrollbar-hide touch-pan-x items-center"
+                             onscroll="updateCarouselDots('${carouselId}', this)">
+                            ${slidesHtml}
+                        </div>
+                        
+                        <!-- Navigation Dots -->
+                        <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-1.5 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full pointer-events-none z-10" id="${carouselId}-dots">
+                            ${dotsHtml}
+                        </div>
+                        
+                        <!-- Count Badge -->
+                         <div class="absolute top-6 right-6 bg-black/60 backdrop-blur-md text-white text-xs font-bold px-2.5 py-1 rounded-full pointer-events-none z-10">
+                            1/${post.media.length}
+                        </div>
+                    </div>
+                `;
+
+            } else {
+                // SINGLE MEDIA or TEXT
+                const media = post.media?.[0] || {};
+                const url = media.view_link || media.url;
+                const isVideo = (media.media_type && media.media_type.startsWith('video')) || url?.match(/\.(mp4|webm|mov)$/i);
+
+                if (url) {
+                    if (isVideo) {
+                        vidEl.classList.remove('hidden');
+                        vidEl.src = url;
+                        vidEl.play().catch(() => { });
+                    } else {
+                        imgEl.classList.remove('hidden');
+                        imgEl.src = url;
+                    }
+                } else {
+                    // Text Post
+                    textCardEl.classList.remove('hidden');
+                    const gradients = [
+                        'from-indigo-500 via-purple-500 to-pink-500',
+                        'from-cyan-500 via-blue-500 to-indigo-500',
+                        'from-orange-400 via-red-500 to-pink-500',
+                        'from-emerald-400 via-teal-500 to-cyan-500'
+                    ];
+                    const gradient = gradients[(post.id || post._id).charCodeAt((post.id || post._id).length - 1) % gradients.length];
+
+                    textCardEl.innerHTML = `
+                        <div class="w-full h-full max-h-[600px] aspect-square bg-gradient-to-br ${gradient} p-8 flex items-center justify-center relative rounded-xl shadow-lg overflow-hidden">
+                                <div class="absolute inset-0 bg-white/10 backdrop-blur-md h-full w-full"></div>
+                                <p class="relative z-10 text-white font-bold text-center text-xl md:text-2xl drop-shadow-md leading-relaxed overflow-y-auto max-h-full custom-scrollbar">
+                                    ${post.caption || post.content || ''}
+                                </p>
+                        </div>
+                    `;
+                }
+            }
+
+            // Header info
+            const author = post.author || {};
+            const username = author.username || 'User';
+            const avatar = author.avatar_url || `https://ui-avatars.com/api/?name=${username}&background=random`;
+
+            document.getElementById('modal-username').textContent = username;
+            document.getElementById('modal-avatar-container').style.backgroundImage = `url("${avatar}")`;
+            document.getElementById('modal-location').textContent = post.location || '';
+            document.getElementById('modal-user-link').onclick = () => location.href = `profile.html?username=${username}`;
+
+            // Caption
+            document.getElementById('modal-caption-user').textContent = username;
+            document.getElementById('modal-caption-avatar').style.backgroundImage = `url("${avatar}")`;
+            document.getElementById('modal-caption').innerHTML = formatCaption(post.caption || '');
+            document.getElementById('modal-time').textContent = formatTime(post.created_at);
+
+            // Stats
+            document.getElementById('modal-likes-count').textContent = `${post.likes_count || 0} likes`;
+            const likeBtn = document.getElementById('modal-like-btn');
+            const likeIcon = likeBtn.querySelector('span');
+            if (post.is_liked) {
+                likeIcon.classList.add('text-pink-500', 'filled');
+                likeIcon.style.fontVariationSettings = "'FILL' 1";
+            } else {
+                likeIcon.classList.remove('text-pink-500', 'filled');
+                likeIcon.style.fontVariationSettings = "'FILL' 0";
+            }
+            likeBtn.onclick = () => handleLike(post.id, likeBtn);
+
+            // Comments
+            loadComments(post.id);
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+        }
+
+        async function loadComments(postId) {
+            const container = document.getElementById('modal-comments');
+            container.innerHTML = '<div class="text-center py-4 text-text-secondary text-xs">Loading comments...</div>';
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/posts/${postId}/comments`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const comments = await res.json();
+                    if (comments.length === 0) {
+                        container.innerHTML = '<div class="text-center py-4 text-text-secondary text-xs">No comments yet.</div>';
+                    } else {
+                        container.innerHTML = comments.map(c => `
+                            <div class="flex gap-3">
+                                <div class="size-8 rounded-full bg-center bg-cover shrink-0" style="background-image: url('${c.author?.avatar_url || 'https://ui-avatars.com/api/?name=' + c.author?.username}')"></div>
+                                <div class="text-sm">
+                                    <span class="font-bold mr-2 cursor-pointer hover:underline" onclick="location.href='profile.html?username=${c.author?.username}'">${c.author?.username}</span>
+                                    <span class="text-slate-700 dark:text-slate-300">${formatCaption(c.text)}</span>
+                                    <div class="flex gap-4 mt-2 text-[10px] text-text-secondary font-bold uppercase tracking-wider">
+                                        <span>${formatTime(c.created_at)}</span>
+                                        <button class="hover:text-slate-900 dark:hover:text-white transition-colors">Reply</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        // Comment Form Listener
+        const commentForm = document.getElementById('modal-comment-form');
+        const commentInput = commentForm.querySelector('input');
+        const commentSubmit = commentForm.querySelector('button');
+
+        commentInput.addEventListener('input', () => {
+            const val = commentInput.value.trim();
+            commentSubmit.disabled = !val;
+            commentSubmit.style.opacity = val ? '1' : '0.5';
+            commentSubmit.style.cursor = val ? 'pointer' : 'default';
+        });
+
+        commentForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const text = commentInput.value.trim();
+            if (!text) return;
+
+            const modal = document.getElementById('post-modal');
+            const postId = document.getElementById('modal-like-btn').onclick.toString().match(/'(.+?)'/)[1];
+            // A bit hacky but works since we set it in showPostInModal. 
+            // Better: store currentModalPostId globally.
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/posts/${postId}/comments`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ text })
+                });
+
+                if (res.ok) {
+                    commentInput.value = '';
+                    commentSubmit.disabled = true;
+                    commentSubmit.style.opacity = '0.5';
+                    loadComments(postId); // Refresh
+
+                    // Update count in explore posts
+                    const post = loadedExplorePosts.find(p => p.id === postId);
+                    if (post) post.comments_count++;
+                }
+            } catch (e) { console.error(e); }
+        });
+
+        window.closeModal = function () {
+            const modal = document.getElementById('post-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = '';
+            document.getElementById('modal-video').pause();
+        }
+
+        // --- Helpers ---
+        function formatCaption(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            let escaped = div.innerHTML;
+            escaped = escaped.replace(/@(\w+)/g, '<a href="profile.html?username=$1" class="text-primary hover:underline font-semibold">@$1</a>');
+            escaped = escaped.replace(/#(\w+)/g, '<a href="explore.html?tag=$1" class="text-primary hover:underline font-semibold">#$1</a>');
+            return escaped;
+        }
+
+        function formatTime(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diff = Math.floor((now - date) / 1000);
+            if (diff < 60) return `${diff}s`;
+            if (diff < 3600) return `${Math.floor(diff / 60)}m`;
+            if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
+            return `${Math.floor(diff / 86400)}d`;
+        }
+
+        // --- Interactions ---
+        async function handleLike(postId, btn) {
+            const icon = btn.querySelector('span');
+            const isLiked = icon.classList.contains('text-pink-500');
+            const method = isLiked ? 'DELETE' : 'POST';
+
+            // Optimistic UI
+            if (isLiked) {
+                icon.classList.remove('text-pink-500', 'filled');
+                icon.style.fontVariationSettings = "'FILL' 0";
+            } else {
+                icon.classList.add('text-pink-500', 'filled');
+                icon.style.fontVariationSettings = "'FILL' 1";
+            }
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/posts/${postId}/likes`, {
+                    method: method,
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error('Failed');
+
+                // Update local post state
+                const post = loadedExplorePosts.find(p => p.id === postId);
+                if (post) {
+                    post.is_liked = !isLiked;
+                    post.likes_count += isLiked ? -1 : 1;
+                    // Update count display in modal if open
+                    const countEl = document.getElementById('modal-likes-count');
+                    if (countEl) countEl.textContent = `${post.likes_count} likes`;
+                }
+            } catch (error) {
+                console.error(error);
+                // Revert icon state on error
+            }
+        }
+
+        // --- Search Logic ---
+        let searchTimeout;
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(searchTimeout);
+            const q = e.target.value.trim();
+            if (!q) {
+                searchResults.classList.add('hidden');
+                return;
+            }
+            searchTimeout = setTimeout(() => performSearch(q), 300);
+        });
+
+        async function performSearch(q) {
+            let type = 'user';
+            let query = q;
+            if (q.startsWith('#')) {
+                type = 'tag';
+                query = q.substring(1);
+            } else if (q.startsWith('@')) {
+                type = 'user';
+                query = q.substring(1);
+            }
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/discovery/search?q=${query}&type=${type}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    renderSearchResults(data, type);
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function renderSearchResults(results, type) {
+            searchResults.classList.remove('hidden');
+            if (results.length === 0) {
+                resultsList.innerHTML = '<div class="p-4 text-center text-text-secondary">No results found</div>';
+                return;
+            }
+            resultsList.innerHTML = results.map(item => {
+                if (type === 'user') {
+                    return `
+                        <div class="flex items-center gap-3 p-3 hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer" onclick="location.href='profile.html?username=${item.username}'">
+                            <img src="${item.avatar_url || 'https://ui-avatars.com/api/?name=' + item.username}" class="size-10 rounded-full">
+                            <div>
+                                <p class="font-bold text-sm text-slate-900 dark:text-white">${item.username}</p>
+                                <p class="text-xs text-text-secondary">${item.first_name} ${item.last_name}</p>
+                            </div>
+                        </div>
+                    `;
+                } else if (type === 'tag') {
+                    return `
+                        <div class="flex items-center gap-3 p-3 hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer" onclick="location.href='explore.html?tag=${item.name}'">
+                            <div class="size-10 rounded-full bg-slate-100 dark:bg-white/10 flex items-center justify-center">
+                                <span class="material-symbols-outlined text-text-secondary">tag</span>
+                            </div>
+                            <div>
+                                <p class="font-bold text-sm text-slate-900 dark:text-white">#${item.name}</p>
+                                <p class="text-xs text-text-secondary">${item.post_count} posts</p>
+                            </div>
+                        </div>
+                    `;
+                }
+            }).join('');
+        }
+
+        // Trending Tags
+        async function loadTrending() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/discovery/trending`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const tags = await res.json();
+                    document.getElementById('trending-tags').innerHTML = tags.map(tag => `
+                        <button onclick="location.href='explore.html?tag=${tag.name}'" class="whitespace-nowrap px-4 py-1.5 rounded-full border border-slate-200 dark:border-border-dark hover:bg-slate-100 dark:hover:bg-white/5 transition-colors text-sm font-semibold">
+                            #${tag.name}
+                        </button>
+                    `).join('');
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTrending();
+            fetchExplore();
+        });
+
+        // Infinite Scroll
+        const scrollContainer = document.querySelector('.flex-1.overflow-y-auto');
+        scrollContainer.addEventListener('scroll', () => {
+            if (scrollContainer.scrollTop + scrollContainer.clientHeight >= scrollContainer.scrollHeight - 100) {
+                fetchExplore();
+            }
+        });
+
+        // Close search results on click outside
+        document.addEventListener('click', (e) => {
+            if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                searchResults.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+
+</html>

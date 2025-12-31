@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Create Post Modal</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&family=Noto+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <script src="js/tailwindcss.js"></script>
+    <script id="tailwind-config">
+        if (typeof tailwind !== 'undefined') {
+            tailwind.config = {
+                darkMode: "class",
+                theme: {
+                    extend: {
+                        colors: {
+                            "primary": "#2b6cee",
+                            "background-light": "#f6f6f8",
+                            "background-dark": "#101622",
+                            "surface-dark": "#1e293b",
+                            "input-bg": "#192233",
+                            "border-dark": "#232f48",
+                            "text-secondary": "#92a4c9"
+                        },
+                        fontFamily: {
+                            "display": ["Spline Sans", "Noto Sans", "sans-serif"],
+                            "body": ["Spline Sans", "Noto Sans", "sans-serif"]
+                        },
+                        borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px" },
+                    },
+                },
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #101622;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #232f48;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #324467;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-white overflow-hidden h-screen">
+    <!-- Background Layer -->
+    <div aria-hidden="true"
+        class="hidden md:flex relative h-full w-full flex-col overflow-hidden opacity-50 pointer-events-none select-none">
+        <header
+            class="flex items-center justify-between whitespace-nowrap border-b border-solid border-border-dark bg-background-dark px-10 py-3 z-10">
+            <div class="flex items-center gap-8">
+                <div class="flex items-center gap-4 text-white">
+                    <div class="size-8 text-primary">
+                        <span class="material-symbols-outlined !text-4xl">diversity_2</span>
+                    </div>
+                    <h2 class="text-white text-lg font-bold leading-tight tracking-[-0.015em]">Social App</h2>
+                </div>
+                <label class="flex flex-col min-w-40 !h-10 max-w-64">
+                    <div class="flex w-full flex-1 items-stretch rounded-lg h-full">
+                        <div
+                            class="text-text-secondary flex border-none bg-border-dark items-center justify-center pl-4 rounded-l-lg border-r-0">
+                            <span class="material-symbols-outlined text-[24px]">search</span>
+                        </div>
+                        <input
+                            class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-white focus:outline-0 focus:ring-0 border-none bg-border-dark focus:border-none h-full placeholder:text-text-secondary px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal"
+                            placeholder="Search" value="" />
+                    </div>
+                </label>
+            </div>
+            <div class="flex flex-1 justify-end gap-8">
+                <div class="flex gap-2">
+                    <button
+                        class="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-border-dark text-white w-10">
+                        <span class="material-symbols-outlined text-[20px]">notifications</span>
+                    </button>
+                    <button
+                        class="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 bg-border-dark text-white w-10">
+                        <span class="material-symbols-outlined text-[20px]">chat</span>
+                    </button>
+                </div>
+                <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10"
+                    data-alt="User profile placeholder"
+                    style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBBuIiku9iA1Q15yLxlPwaxcGqNQ2xtRFfQlGP_eRsvLu12yxws6g34M8SieAboajalorab74jWH3wekMAfeOoTykyWqMFdCKCITQ9j8vQ9ODeiMAXoHWQOyILh-aS_vjXusquvkElnn2EACUG_UGc8F0E4UKEqMyAjPqAdK-JQJ4-xG2e-JnUIn6jfN0e4EoRhKMzlYx-xzFN8angJK49azY0T-tjazUuDK6Ie0lF8vwV-bomWAT8e4uexSVPt9T5WER-uJj8GN_3R");'>
+                </div>
+            </div>
+        </header>
+        <div class="flex flex-1 overflow-hidden">
+            <div class="w-64 border-r border-border-dark bg-background-dark p-4 hidden lg:flex flex-col gap-4">
+                <div class="flex items-center gap-3 px-3 py-2 rounded-lg bg-border-dark text-white">
+                    <span class="material-symbols-outlined text-[24px]">home</span>
+                    <p class="text-sm font-medium">Home</p>
+                </div>
+                <div class="flex items-center gap-3 px-3 py-2 text-text-secondary">
+                    <span class="material-symbols-outlined text-[24px]">explore</span>
+                    <p class="text-sm font-medium">Explore</p>
+                </div>
+                <div class="flex items-center gap-3 px-3 py-2 text-text-secondary">
+                    <span class="material-symbols-outlined text-[24px]">notifications</span>
+                    <p class="text-sm font-medium">Notifications</p>
+                </div>
+                <div class="flex items-center gap-3 px-3 py-2 text-text-secondary">
+                    <span class="material-symbols-outlined text-[24px]">mail</span>
+                    <p class="text-sm font-medium">Messages</p>
+                </div>
+                <div class="flex items-center gap-3 px-3 py-2 text-text-secondary">
+                    <span class="material-symbols-outlined text-[24px]">account_circle</span>
+                    <p class="text-sm font-medium">Profile</p>
+                </div>
+            </div>
+            <div class="flex-1 flex justify-center bg-background-dark overflow-y-auto">
+                <div class="w-full max-w-[640px] py-6 flex flex-col gap-6">
+                    <div class="bg-input-bg p-4 rounded-xl border border-border-dark h-24"></div>
+                    <div class="bg-input-bg p-4 rounded-xl border border-border-dark h-96"></div>
+                    <div class="bg-input-bg p-4 rounded-xl border border-border-dark h-96"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Overlay -->
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div
+            class="w-full max-w-2xl bg-surface-dark md:rounded-xl shadow-2xl border border-border-dark flex flex-col h-full md:h-auto md:max-h-[90vh] overflow-hidden animate-fade-in-up">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-border-dark">
+                <h3 class="text-white text-xl font-bold leading-tight tracking-[-0.015em]">Create Post</h3>
+                <button id="close-modal"
+                    class="text-text-secondary hover:text-white transition-colors rounded-full p-1 hover:bg-white/10">
+                    <span class="material-symbols-outlined text-[24px]">close</span>
+                </button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
+                <div id="post-form-content">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div id="user-avatar" class="bg-center bg-no-repeat bg-cover rounded-full size-12 shadow-sm"
+                            data-alt="User profile picture"
+                            style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBi6gy4ygGYVJjgSyWn_Cx6OHBvKgkvjKrvPQRdAO4fGeDIXWI5PrH4GYxYZFCS5yDTGEfdDTb3ipbV1xd0gSe3UwXtkhPLnkJ7cAs1Cj_W6xddVIv1gePXGh1kCloNXr0-lyT8750KF_2PqjMT0xOfeuGOg6YxOOwkeaVuMJesCoh-BrNXCNGTquq4KOttOqA1zRBibOwXIED1ykNPiHUz1QvqAN-nTDRPm1OpFHZQAyoaZ35smmYcw-NyS6x5hFbYdNApUCq0FfIH");'>
+                        </div>
+                        <div class="flex flex-col">
+                            <span id="user-name" class="text-white text-base font-semibold">Loading...</span>
+                            <button
+                                class="flex items-center gap-1 text-xs font-medium text-primary bg-primary/10 hover:bg-primary/20 px-2 py-0.5 rounded transition-colors w-fit mt-0.5">
+                                <span class="material-symbols-outlined text-[14px]">public</span>
+                                Public
+                                <span class="material-symbols-outlined text-[14px]">expand_more</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="relative w-full mb-4 group">
+                        <textarea id="post-content"
+                            class="w-full bg-transparent border-none text-lg text-white placeholder:text-text-secondary focus:ring-0 resize-none min-h-[120px] p-0 leading-relaxed scrollbar-hide"
+                            placeholder="What's on your mind?"></textarea>
+                        <p class="text-xs text-text-secondary mt-2">
+                            Tip: Use <span class="text-primary font-medium">#hashtags</span> to make your post
+                            discoverable.
+                        </p>
+                    </div>
+
+                    <div id="media-upload-area"
+                        class="w-full border-2 border-dashed border-border-dark rounded-xl bg-background-dark/50 hover:bg-background-dark hover:border-text-secondary transition-colors cursor-pointer group p-8 flex flex-col items-center justify-center text-center gap-3 mb-2">
+                        <input type="file" id="media-input" class="hidden" accept="image/*,video/*" multiple>
+                        <div class="p-3 bg-border-dark rounded-full group-hover:bg-[#2b6cee]/20 transition-colors">
+                            <span
+                                class="material-symbols-outlined text-text-secondary group-hover:text-primary text-[28px]">add_photo_alternate</span>
+                        </div>
+                        <div>
+                            <p class="text-white text-sm font-medium">Add photos or videos</p>
+                            <p class="text-text-secondary text-xs mt-1">or drag and drop</p>
+                        </div>
+                    </div>
+
+                    <!-- Upload Progress -->
+                    <div id="upload-progress" class="hidden mb-4">
+                        <div class="bg-border-dark rounded-lg p-3">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm text-white">Uploading...</span>
+                                <span id="progress-percent" class="text-sm text-text-secondary">0%</span>
+                            </div>
+                            <div class="w-full bg-background-dark rounded-full h-2">
+                                <div id="progress-bar" class="bg-primary h-2 rounded-full transition-all duration-300"
+                                    style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Media Preview Gallery -->
+                <div id="media-preview-container" class="hidden grid grid-cols-2 gap-3 mb-4">
+                    <!-- Previews will be inserted here dynamically -->
+                </div>
+
+                <!-- Success Message -->
+                <div id="success-message" class="hidden flex-col items-center justify-center h-full py-10 text-center">
+                    <div
+                        class="size-20 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mb-4 animate-bounce">
+                        <span class="material-symbols-outlined text-5xl">check_circle</span>
+                    </div>
+                    <h3 class="text-white text-2xl font-bold mb-2">Post Published!</h3>
+                    <p class="text-text-secondary">Your moment has been shared successfully.</p>
+                </div>
+            </div>
+
+            <div id="post-footer" class="p-4 border-t border-border-dark bg-input-bg/50">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-1">
+                        <p class="text-text-secondary text-xs font-medium mr-2 hidden sm:block">Add to your post</p>
+                        <button class="p-2 text-green-500 hover:bg-green-500/10 rounded-full transition-colors"
+                            title="Photo/Video">
+                            <span class="material-symbols-outlined text-[24px]">image</span>
+                        </button>
+                        <button class="p-2 text-blue-500 hover:bg-blue-500/10 rounded-full transition-colors"
+                            title="Tag People">
+                            <span class="material-symbols-outlined text-[24px]">person_add</span>
+                        </button>
+                        <button class="p-2 text-yellow-500 hover:bg-yellow-500/10 rounded-full transition-colors"
+                            title="Feeling/Activity">
+                            <span class="material-symbols-outlined text-[24px]">sentiment_satisfied</span>
+                        </button>
+                        <button class="p-2 text-red-500 hover:bg-red-500/10 rounded-full transition-colors"
+                            title="Check in">
+                            <span class="material-symbols-outlined text-[24px]">location_on</span>
+                        </button>
+                        <button
+                            class="p-2 text-text-secondary hover:bg-white/10 rounded-full transition-colors sm:hidden">
+                            <span class="material-symbols-outlined text-[24px]">more_horiz</span>
+                        </button>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <div class="hidden sm:block">
+                            <div
+                                class="w-6 h-6 rounded-full border-2 border-border-dark flex items-center justify-center">
+                                <span class="text-[10px] text-text-secondary">0</span>
+                            </div>
+                        </div>
+                        <div class="w-px h-8 bg-border-dark mx-1 hidden sm:block"></div>
+                        <button id="cancel-post"
+                            class="text-text-secondary hover:text-white font-medium text-sm px-4 py-2 transition-colors">
+                            Cancel
+                        </button>
+                        <button id="submit-post" type="button"
+                            class="bg-primary hover:bg-blue-600 text-white font-bold text-sm px-6 py-2 rounded-lg transition-all shadow-lg shadow-blue-900/20 flex items-center gap-2">
+                            <span>Post</span>
+                            <span class="material-symbols-outlined text-[18px]">send</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://127.0.0.1:8000/api/v1';
+        const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+
+        if (!token) {
+            window.location.href = 'login.html';
+            throw new Error("No token found");
+        }
+
+        // Elements
+        const postContent = document.getElementById('post-content');
+        const submitBtn = document.getElementById('submit-post');
+        const cancelBtn = document.getElementById('cancel-post');
+        const closeBtn = document.getElementById('close-modal');
+        const mediaArea = document.getElementById('media-upload-area');
+        const mediaInput = document.getElementById('media-input');
+        const userNameEl = document.getElementById('user-name');
+        const userAvatarEl = document.getElementById('user-avatar');
+        const uploadProgress = document.getElementById('upload-progress');
+        const progressBar = document.getElementById('progress-bar');
+        const progressPercent = document.getElementById('progress-percent');
+        const previewContainer = document.getElementById('media-preview-container');
+
+        // Multiple files management
+        let selectedFiles = [];
+
+        // Auth Check
+        if (!token) {
+            window.location.href = 'login.html';
+            throw new Error("Authentication required");
+        }
+
+        // Load User Profile
+        async function loadProfile() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/users/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const user = await response.json();
+                    userNameEl.textContent = `${user.first_name} ${user.last_name}`;
+                    postContent.placeholder = `What's on your mind, ${user.first_name}?`;
+
+                    const avatarUrl = user.avatar_url || user.profile_image || `https://ui-avatars.com/api/?name=${user.first_name}+${user.last_name}&background=random`;
+                    userAvatarEl.style.backgroundImage = `url("${avatarUrl}")`;
+                } else if (response.status === 401) {
+                    localStorage.removeItem('access_token');
+                    sessionStorage.removeItem('access_token');
+                    window.location.href = 'login.html';
+                }
+            } catch (e) {
+                console.error('Failed to load profile', e);
+            }
+        }
+        loadProfile();
+
+        // Navigation
+        function goBack() {
+            window.location.href = 'feed.html';
+        }
+        cancelBtn.addEventListener('click', goBack);
+        closeBtn.addEventListener('click', goBack);
+
+        // Media Handling - Multiple Files
+        mediaArea.addEventListener('click', () => mediaInput.click());
+        mediaInput.addEventListener('change', () => {
+            const newFiles = Array.from(mediaInput.files);
+            if (newFiles.length > 0) {
+                selectedFiles.push(...newFiles);
+                renderMediaPreviews();
+                mediaInput.value = ''; // Reset input to allow selecting same file again
+            }
+        });
+
+        function renderMediaPreviews() {
+            if (selectedFiles.length === 0) {
+                previewContainer.classList.add('hidden');
+                document.querySelector('#media-upload-area p').textContent = 'Add photos or videos';
+                return;
+            }
+
+            previewContainer.classList.remove('hidden');
+            previewContainer.innerHTML = '';
+            document.querySelector('#media-upload-area p').textContent = `${selectedFiles.length} file(s) selected`;
+
+            selectedFiles.forEach((file, index) => {
+                const isVideo = file.type.startsWith('video/');
+                const previewUrl = URL.createObjectURL(file);
+
+                const previewItem = document.createElement('div');
+                previewItem.className = 'relative group rounded-lg overflow-hidden bg-border-dark aspect-square';
+                previewItem.innerHTML = `
+                    ${isVideo ?
+                        `<video src="${previewUrl}" class="w-full h-full object-cover" muted></video>
+                         <div class="absolute inset-0 bg-black/40 flex items-center justify-center">
+                             <span class="material-symbols-outlined text-white text-4xl">play_circle</span>
+                         </div>` :
+                        `<img src="${previewUrl}" class="w-full h-full object-cover" alt="Preview">`
+                    }
+                    <button onclick="removeFile(${index})" class="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
+                        <span class="material-symbols-outlined text-[18px]">close</span>
+                    </button>
+                    <div class="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                        ${file.name.length > 15 ? file.name.substring(0, 15) + '...' : file.name}
+                    </div>
+                `;
+                previewContainer.appendChild(previewItem);
+            });
+        }
+
+        window.removeFile = function (index) {
+            selectedFiles.splice(index, 1);
+            renderMediaPreviews();
+        };
+
+        // Drag and Drop Support
+        mediaArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            mediaArea.classList.add('border-primary', 'bg-primary/10');
+        });
+
+        mediaArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            mediaArea.classList.remove('border-primary', 'bg-primary/10');
+        });
+
+        mediaArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            mediaArea.classList.remove('border-primary', 'bg-primary/10');
+
+            const droppedFiles = Array.from(e.dataTransfer.files).filter(file =>
+                file.type.startsWith('image/') || file.type.startsWith('video/')
+            );
+
+            if (droppedFiles.length > 0) {
+                selectedFiles.push(...droppedFiles);
+                renderMediaPreviews();
+            }
+        });
+
+        // Upload with Progress
+        async function uploadMediaWithProgress(file) {
+            return new Promise((resolve, reject) => {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                // Determine endpoint based on file type
+                let uploadEndpoint;
+                if (file.type.startsWith('image/')) {
+                    uploadEndpoint = `${API_BASE_URL}/posts/upload/image`;
+                } else if (file.type.startsWith('video/')) {
+                    uploadEndpoint = `${API_BASE_URL}/posts/upload/video`;
+                } else {
+                    // Check file extension as fallback
+                    const ext = file.name.split('.').pop().toLowerCase();
+                    if (['mp4', 'webm', 'ogg', 'mov', 'mkv', 'avi'].includes(ext)) {
+                        uploadEndpoint = `${API_BASE_URL}/posts/upload/video`;
+                    } else if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
+                        uploadEndpoint = `${API_BASE_URL}/posts/upload/image`;
+                    } else {
+                        reject(new Error('Unsupported file type'));
+                        return;
+                    }
+                }
+
+                const xhr = new XMLHttpRequest();
+
+                // Progress tracking
+                xhr.upload.addEventListener('progress', (e) => {
+                    if (e.lengthComputable) {
+                        const percent = Math.round((e.loaded / e.total) * 100);
+                        progressBar.style.width = percent + '%';
+                        progressPercent.textContent = percent + '%';
+                    }
+                });
+
+                xhr.addEventListener('load', () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            console.log('Upload response:', response);
+
+                            // Extract media ID - try multiple possible field names
+                            const mediaId = response.media_id || response.id || response.video_id || response.image_id;
+
+                            if (!mediaId) {
+                                console.error('No media ID in response:', response);
+                                reject(new Error('Upload succeeded but no media ID returned'));
+                            } else {
+                                resolve(mediaId);
+                            }
+                        } catch (e) {
+                            console.error('Failed to parse upload response:', e);
+                            reject(new Error('Invalid response from server'));
+                        }
+                    } else {
+                        try {
+                            const error = JSON.parse(xhr.responseText);
+                            reject(new Error(error.detail || `Upload failed with status ${xhr.status}`));
+                        } catch (e) {
+                            reject(new Error(`Upload failed with status ${xhr.status}`));
+                        }
+                    }
+                });
+
+                xhr.addEventListener('error', () => {
+                    reject(new Error('Network error during upload'));
+                });
+
+                xhr.addEventListener('abort', () => {
+                    reject(new Error('Upload cancelled'));
+                });
+
+                xhr.open('POST', uploadEndpoint);
+                xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+                xhr.send(formData);
+            });
+        }
+
+        // Submit Post - Multiple Files
+        submitBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const content = postContent.value.trim();
+
+            if (!content && selectedFiles.length === 0) {
+                alert("Please add some content or media.");
+                return;
+            }
+
+            // Disable UI
+            submitBtn.innerHTML = '<span>Posting...</span>';
+            submitBtn.disabled = true;
+            cancelBtn.disabled = true;
+            closeBtn.disabled = true;
+
+            try {
+                let mediaIds = [];
+
+                // Step 1: Upload all media files
+                if (selectedFiles.length > 0) {
+                    uploadProgress.classList.remove('hidden');
+
+                    for (let i = 0; i < selectedFiles.length; i++) {
+                        const file = selectedFiles[i];
+                        console.log(`Uploading file ${i + 1}/${selectedFiles.length}:`, file.name);
+
+                        // Update progress text
+                        document.querySelector('#upload-progress span').textContent = `Uploading ${i + 1}/${selectedFiles.length}...`;
+                        progressBar.style.width = '0%';
+                        progressPercent.textContent = '0%';
+
+                        try {
+                            const mediaId = await uploadMediaWithProgress(file);
+                            mediaIds.push(mediaId);
+                            console.log(`File ${i + 1} uploaded with ID:`, mediaId);
+                        } catch (uploadError) {
+                            console.error(`Upload error for file ${i + 1}:`, uploadError);
+                            throw new Error(`Failed to upload ${file.name}: ${uploadError.message}`);
+                        }
+                    }
+
+                    uploadProgress.classList.add('hidden');
+                }
+
+                // Step 2: Create Post with all media IDs
+                const postPayload = {
+                    caption: content || '',
+                    media_ids: mediaIds
+                };
+
+                console.log('Creating post with payload:', postPayload);
+
+                const response = await fetch(`${API_BASE_URL}/posts/`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(postPayload)
+                });
+
+                const responseData = await response.json();
+                console.log('Post creation response:', responseData);
+
+                if (response.ok) {
+                    document.getElementById('post-form-content').classList.add('hidden');
+                    document.getElementById('post-footer').classList.add('hidden');
+                    document.getElementById('success-message').classList.remove('hidden');
+                    document.getElementById('success-message').classList.add('flex');
+
+                    setTimeout(() => {
+                        window.location.href = 'feed.html';
+                    }, 2000);
+                } else {
+                    const errorMessage = responseData.detail
+                        ? (typeof responseData.detail === 'string' ? responseData.detail : JSON.stringify(responseData.detail))
+                        : 'Unknown error';
+                    throw new Error(errorMessage);
+                }
+            } catch (error) {
+                console.error('Error posting:', error);
+                alert('Failed to create post: ' + error.message);
+
+                // Re-enable UI
+                submitBtn.innerHTML = '<span>Post</span> <span class="material-symbols-outlined text-[18px]">send</span>';
+                submitBtn.disabled = false;
+                cancelBtn.disabled = false;
+                closeBtn.disabled = false;
+                uploadProgress.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+
+</html>

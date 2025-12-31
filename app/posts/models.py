@@ -1,5 +1,5 @@
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 
 from beanie import Document, Link
@@ -39,7 +39,7 @@ class Media(Document):
     # # Direct Download Link (Good for certain <video> tags)
     # download_link: Optional[str] = None
 
-    created_at: datetime = Field(default_factory=datetime.now)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     
     class Settings:
         name = "media"
@@ -67,8 +67,8 @@ class Post(Document):
     share_count: int = 0
     original_post: Optional[Link["Post"]] = None
     
-    created_at: datetime = Field(default_factory=datetime.now)
-    updated_at: datetime = Field(default_factory=datetime.now)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     class Settings:
         name = "posts"
