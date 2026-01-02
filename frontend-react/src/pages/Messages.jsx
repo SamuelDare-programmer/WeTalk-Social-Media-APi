@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Edit, Phone, Video, Info, Send, Smile, Paperclip, MessageSquare, Loader2, ArrowLeft, X, Trash2 } from 'lucide-react';
+import { Search, Edit, Info, Send, Smile, Paperclip, MessageSquare, Loader2, ArrowLeft, X, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 
 const Messages = () => {
     const { user } = useAuth();
@@ -21,6 +22,7 @@ const Messages = () => {
     const [chatToDelete, setChatToDelete] = useState(null);
     const messagesEndRef = useRef(null);
     const ws = useRef(null);
+    const navigate = useNavigate();
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -237,7 +239,7 @@ const Messages = () => {
     );
 
     return (
-        <div className="h-[calc(100vh-64px)] -mt-4 -mx-4 lg:-mx-8 lg:-mt-8 flex bg-white dark:bg-slate-950 overflow-hidden border-t border-slate-200 dark:border-border-dark animate-in fade-in duration-500">
+        <div className="flex bg-white dark:bg-slate-950 overflow-hidden border-t border-slate-200 dark:border-border-dark animate-in fade-in duration-500 h-[calc(100vh-64px)] -mt-4 -mx-4 lg:fixed lg:inset-0 lg:top-16 lg:left-20 lg:m-0 lg:h-auto lg:z-30">
             {/* Chat List */}
             <div className={`w-full lg:w-[350px] flex flex-col border-r border-slate-200 dark:border-border-dark ${selectedChat ? 'hidden lg:flex' : 'flex'}`}>
                 <div className="p-6 flex items-center justify-between">
@@ -315,9 +317,13 @@ const Messages = () => {
                                 </div>
                             </div>
                             <div className="flex items-center gap-1">
-                                <button className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-full text-slate-600 dark:text-gray-400"><Phone className="size-5" /></button>
-                                <button className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-full text-slate-600 dark:text-gray-400"><Video className="size-5" /></button>
-                                <button className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-full text-slate-600 dark:text-gray-400"><Info className="size-5" /></button>
+                                <button
+                                    onClick={() => !selectedChat.isGroup && selectedChat.name && navigate(`/profile/${selectedChat.name}`)}
+                                    className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-full text-slate-600 dark:text-gray-400"
+                                    title="View Profile"
+                                >
+                                    <Info className="size-5" />
+                                </button>
                                 <button
                                     onClick={(e) => handleDeleteClick(e, selectedChat.id)}
                                     className="p-2 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20 dark:hover:text-red-400 rounded-full text-slate-600 dark:text-gray-400 transition-colors"
