@@ -3,6 +3,7 @@ from fastapi import APIRouter, Query, status, Depends
 # from app.core.db.database import get_database
 from app.core.auth.schemas import UserCreateModel, UserPublicModel, PasswordResetModel
 from fastapi.security import OAuth2PasswordRequestForm
+from app.core.config import settings
 
 from app.core.auth.service import UserService
 from .dependencies import RefreshTokenBearer, get_current_user
@@ -81,8 +82,9 @@ async def password_reset_confirm(token: str):
     if not email:
         raise InvalidToken()
     
-    # Redirect to frontend password reset page with email as query parameter
-    frontend_url = f"http://127.0.0.1:5500/html/reset-password.html?email={email}&token={token}"
+    # Redirect to React frontend password reset page
+    domain_name = settings.FRONTEND_DOMAIN_NAME
+    frontend_url = f"http://{domain_name}/reset-password/confirm?email={email}&token={token}"
     return RedirectResponse(url=frontend_url)
 
 @router.post("/password_reset/confirm")

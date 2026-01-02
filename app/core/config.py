@@ -5,6 +5,7 @@ import cloudinary
 
 
 class Settings(BaseSettings):
+    FRONTEND_DOMAIN_NAME: str
     MONGODB_URL: str
     DB_NAME: str
     JTI_EXPIRY: int

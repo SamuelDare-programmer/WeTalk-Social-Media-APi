@@ -14,7 +14,7 @@ const Explore = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    const categories = ['All', 'Places', 'Photography', 'Art', 'Travel', 'Food', 'Style', 'Tech'];
+    const categories = ['All', 'Pictures', 'Videos', 'Places'];
     const [isPlaceSearch, setIsPlaceSearch] = useState(false);
 
     useEffect(() => {
@@ -30,6 +30,12 @@ const Explore = () => {
             setLoading(true);
             try {
                 let endpoint = '/discovery/explore?limit=30';
+                const currentCat = catParam || activeCategory;
+
+                if (!queryParam) {
+                    if (currentCat === 'Pictures') endpoint += '&type=image';
+                    else if (currentCat === 'Videos') endpoint += '&type=video';
+                }
 
                 // Handle Explicit Location View
                 if (typeParam === 'location' && queryParam) {
@@ -41,7 +47,7 @@ const Explore = () => {
                     if (queryParam.startsWith('#')) {
                         endpoint = `/discovery/tags/${queryParam.replace('#', '')}?limit=30`;
                         setIsPlaceSearch(false);
-                    } else if ((catParam || activeCategory) === 'Places') {
+                    } else if (currentCat === 'Places') {
                         endpoint = `/discovery/search?q=${encodeURIComponent(queryParam)}&type=place&limit=30`;
                         setIsPlaceSearch(true);
                     } else {

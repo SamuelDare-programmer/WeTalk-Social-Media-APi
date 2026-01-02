@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, MessageCircle, UserPlus, Star, MoreHorizontal, Loader2, Check, Repeat } from 'lucide-react';
+import { Heart, MessageCircle, UserPlus, Star, MoreHorizontal, Loader2, Check, Repeat, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import axios from '../api/axios';
 import { useNavigate } from 'react-router-dom';
+import PostDetailModal from '../components/PostDetailModal';
 
 const Notifications = () => {
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [selectedNotification, setSelectedNotification] = useState(null);
+    const [selectedPost, setSelectedPost] = useState(null);
     const navigate = useNavigate();
 
     const fetchNotifications = async () => {
@@ -50,19 +53,27 @@ const Notifications = () => {
 
         if (notif.type === 'follow') {
             if (notif.actor?.username) navigate(`/profile/${notif.actor.username}`);
-        } else if (notif.target_id) {
-            navigate(`/post/${notif.target_id}`);
+        } else if (notif.target_id && ['like', 'comment', 'mention', 'share'].includes(notif.type)) {
+            try {
+                const res = await axios.get(`/posts/${notif.target_id}`);
+                setSelectedPost(res.data);
+            } catch (err) {
+                console.error('Failed to fetch post', err);
+                setSelectedNotification(notif);
+            }
+        } else {
+            setSelectedNotification(notif);
         }
     };
 
-    const getIcon = (type) => {
+    const getIcon = (type, size = "size-4") => {
         switch (type) {
-            case 'like': return <Heart className="size-4 fill-red-500 text-red-500" />;
-            case 'follow': return <UserPlus className="size-4 text-blue-500" />;
-            case 'comment': return <MessageCircle className="size-4 text-green-500" />;
-            case 'mention': return <span className="text-xs font-bold text-primary">@</span>;
-            case 'share': return <Repeat className="size-4 text-green-500" />;
-            default: return <Star className="size-4 text-yellow-500" />;
+            case 'like': return <Heart className={`${size} fill-red-500 text-red-500`} />;
+            case 'follow': return <UserPlus className={`${size} text-blue-500`} />;
+            case 'comment': return <MessageCircle className={`${size} text-green-500`} />;
+            case 'mention': return <span className={`${size === "size-4" ? "text-xs" : "text-2xl"} font-bold text-primary`}>@</span>;
+            case 'share': return <Repeat className={`${size} text-green-500`} />;
+            default: return <Star className={`${size} text-yellow-500`} />;
         }
     };
 
@@ -142,6 +153,68 @@ const Notifications = () => {
                     </div>
                 )}
             </div>
+
+            <AnimatePresence>
+                {selectedPost && (
+                    <PostDetailModal
+                        post={selectedPost}
+                        onClose={() => setSelectedPost(null)}
+                    />
+                )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+                {selectedNotification && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setSelectedNotification(null)}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl shadow-xl overflow-hidden border border-slate-100 dark:border-slate-800 relative"
+                        >
+                            <button
+                                onClick={() => setSelectedNotification(null)}
+                                className="absolute top-4 right-4 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                            >
+                                <X className="size-5 text-slate-500" />
+                            </button>
+
+                            <div className="p-8 text-center">
+                                <div className="mx-auto mb-4 size-16 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center">
+                                    {getIcon(selectedNotification.type, "size-8")}
+                                </div>
+
+                                <h3 className="text-xl font-bold dark:text-white mb-1">
+                                    {selectedNotification.actor.username}
+                                </h3>
+                                <p className="text-slate-500 dark:text-slate-400 mb-6">
+                                    {getContent(selectedNotification)}
+                                </p>
+
+                                {selectedNotification.metadata?.preview && (
+                                    <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl mb-6 text-sm text-slate-600 dark:text-slate-300 italic">
+                                        "{selectedNotification.metadata.preview}"
+                                    </div>
+                                )}
+
+                                <button
+                                    onClick={() => setSelectedNotification(null)}
+                                    className="w-full py-3 bg-primary text-white font-bold rounded-xl hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
+                                >
+                                    Close
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

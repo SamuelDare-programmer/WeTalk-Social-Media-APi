@@ -9,6 +9,7 @@ const Login = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [rememberMe, setRememberMe] = useState(false);
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const { login } = useAuth();
@@ -32,7 +33,18 @@ const Login = () => {
             });
 
             if (response.data.access_token) {
-                await login(response.data.access_token);
+                const { access_token, refresh_token } = response.data;
+
+                if (refresh_token) {
+                    if (rememberMe) {
+                        localStorage.setItem('refresh_token', refresh_token);
+                        sessionStorage.removeItem('refresh_token');
+                    } else {
+                        sessionStorage.setItem('refresh_token', refresh_token);
+                        localStorage.removeItem('refresh_token');
+                    }
+                }
+                await login(access_token);
                 navigate('/');
             }
         } catch (err) {
@@ -94,6 +106,24 @@ const Login = () => {
                             placeholder="••••••••"
                             required
                         />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                id="rememberMe"
+                                checked={rememberMe}
+                                onChange={(e) => setRememberMe(e.target.checked)}
+                                className="accent-primary size-4 rounded cursor-pointer"
+                            />
+                            <label htmlFor="rememberMe" className="text-xs font-bold text-slate-500 dark:text-slate-400 cursor-pointer select-none">
+                                Keep me logged in
+                            </label>
+                        </div>
+                        <Link to="/forgot-password" className="text-xs font-bold text-primary hover:underline">
+                            Forgot Password?
+                        </Link>
                     </div>
 
                     <button

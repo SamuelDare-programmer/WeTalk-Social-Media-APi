@@ -23,6 +23,7 @@ const Profile = () => {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('posts');
     const [selectedPost, setSelectedPost] = useState(null);
+    const [showAvatarModal, setShowAvatarModal] = useState(false);
     const navigate = useNavigate();
 
     const isOwner = currentUser?.username === username;
@@ -198,7 +199,10 @@ const Profile = () => {
         <div className="max-w-[800px] mx-auto animate-in fade-in duration-500">
             {/* Profile Header */}
             <div className="flex flex-col md:flex-row gap-8 items-center md:items-start mb-12">
-                <div className="size-32 md:size-40 rounded-full border-4 border-white dark:border-surface-dark overflow-hidden shadow-xl shrink-0">
+                <div
+                    onClick={() => setShowAvatarModal(true)}
+                    className="size-32 md:size-40 rounded-full border-4 border-white dark:border-surface-dark overflow-hidden shadow-xl shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
+                >
                     <img
                         src={profileUser.avatar_url || `https://ui-avatars.com/api/?name=${profileUser.username}`}
                         alt={profileUser.username}
@@ -214,7 +218,7 @@ const Profile = () => {
                         <div className="flex gap-2 justify-center md:justify-start">
                             {isOwner ? (
                                 <button
-                                    onClick={() => navigate('/settings/profile')}
+                                    onClick={() => navigate('/edit-profile')}
                                     className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-white/10 border border-slate-200 dark:border-border-dark rounded-lg text-sm font-bold hover:bg-slate-50 dark:hover:bg-white/5 transition-all text-slate-900 dark:text-white"
                                 >
                                     <Edit className="size-4" /> Edit Profile
@@ -371,6 +375,34 @@ const Profile = () => {
                         post={selectedPost}
                         onClose={() => setSelectedPost(null)}
                     />
+                )}
+            </AnimatePresence>
+
+            {/* Avatar Modal */}
+            <AnimatePresence>
+                {showAvatarModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center backdrop-blur-sm p-4"
+                        onClick={() => setShowAvatarModal(false)}
+                    >
+                        <button
+                            onClick={() => setShowAvatarModal(false)}
+                            className="absolute top-4 right-4 p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-full transition-colors z-50"
+                        >
+                            <X className="size-8" />
+                        </button>
+                        <motion.img
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            src={profileUser.avatar_url || `https://ui-avatars.com/api/?name=${profileUser.username}`}
+                            className="max-w-full max-h-[80vh] aspect-square rounded-full object-cover shadow-2xl border-4 border-white dark:border-slate-800"
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    </motion.div>
                 )}
             </AnimatePresence>
 

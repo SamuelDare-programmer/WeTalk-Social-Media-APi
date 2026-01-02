@@ -11,8 +11,11 @@ import Messages from './pages/Messages';
 import Notifications from './pages/Notifications';
 import CreatePost from './pages/CreatePost';
 import CreateStory from './pages/CreateStory';
+import EditProfile from './pages/EditProfile';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPasswordConfirm from './pages/ResetPasswordConfirm';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { VideoProvider } from './context/VideoContext';
@@ -58,11 +61,14 @@ function App() {
                   <Route path="notifications" element={<Notifications />} />
                   <Route path="create/post" element={<CreatePost />} />
                   <Route path="create/story" element={<CreateStory />} />
+                  <Route path="edit-profile" element={<EditProfile />} />
                 </Route>
 
                 {/* Auth Routes */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password/confirm" element={<ResetPasswordConfirm />} />
               </Routes>
             </Router>
           </AuthProvider>
