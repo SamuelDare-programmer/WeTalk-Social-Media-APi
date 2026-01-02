@@ -1,21 +1,27 @@
 import React, { useState } from 'react';
-import { Heart, MessageCircle, Repeat, Bookmark, MoreHorizontal, MapPin } from 'lucide-react';
+import { Heart, MessageCircle, Repeat, Bookmark, MoreHorizontal, MapPin, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import MediaRenderer from './MediaRenderer';
 import { getTimeAgo, formatCaptionWithHashtags } from '../utils/formatters';
 import axios from '../api/axios';
+import { useAuth } from '../context/AuthContext';
+import { motion, AnimatePresence } from 'framer-motion';
 
-const PostCard = ({ post, onLike, onComment, onShare, onBookmark }) => {
+const PostCard = ({ post, onLike, onComment, onShare, onBookmark, onDelete }) => {
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [isLiked, setIsLiked] = useState(post.is_liked);
     const [likesCount, setLikesCount] = useState(post.likes_count || 0);
     const [showHeartPop, setShowHeartPop] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
 
     const author = post.author || {};
     const authorName = `${author.first_name || ''} ${author.last_name || ''}`.trim() || author.username || 'Unknown';
     const authorAvatar = author.avatar_url || `https://ui-avatars.com/api/?name=${author.username || 'user'}&background=random`;
 
     const [isBookmarked, setIsBookmarked] = useState(post.is_bookmarked);
+
+    const isOwner = user && (post.owner_id === (user.id || user._id));
 
     const handleLike = async () => {
         const nextIsLiked = !isLiked;
@@ -75,6 +81,21 @@ const PostCard = ({ post, onLike, onComment, onShare, onBookmark }) => {
         setTimeout(() => setShowHeartPop(false), 800);
     };
 
+    const handleDeleteClick = () => {
+        setShowDeleteModal(true);
+    };
+
+    const confirmDelete = async () => {
+        try {
+            await axios.delete(`/posts/${post.id || post._id}`);
+            onDelete?.(post.id || post._id);
+        } catch (err) {
+            console.error('Delete failed', err);
+        } finally {
+            setShowDeleteModal(false);
+        }
+    };
+
     return (
         <article className="bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-border-dark p-4 shadow-sm group transition-all hover:shadow-md mb-4">
             <div className="flex gap-3">
@@ -105,9 +126,19 @@ const PostCard = ({ post, onLike, onComment, onShare, onBookmark }) => {
                         </div>
                         <div className="flex items-center gap-2">
                             <span className="text-xs text-text-secondary">{getTimeAgo(post.created_at)}</span>
-                            <button className="text-text-secondary hover:text-slate-900 dark:hover:text-white">
-                                <MoreHorizontal className="size-4" />
-                            </button>
+                            {isOwner ? (
+                                <button
+                                    onClick={handleDeleteClick}
+                                    className="text-text-secondary hover:text-red-500 transition-colors"
+                                    title="Delete Post"
+                                >
+                                    <Trash2 className="size-4" />
+                                </button>
+                            ) : (
+                                <button className="text-text-secondary hover:text-slate-900 dark:hover:text-white">
+                                    <MoreHorizontal className="size-4" />
+                                </button>
+                            )}
                         </div>
                     </div>
 
@@ -174,6 +205,52 @@ const PostCard = ({ post, onLike, onComment, onShare, onBookmark }) => {
                     <Bookmark className={`size-6 ${isBookmarked ? 'fill-current' : ''}`} />
                 </button>
             </div>
+
+            {/* Delete Confirmation Modal */}
+            <AnimatePresence>
+                {showDeleteModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 cursor-default"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setShowDeleteModal(false);
+                        }}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden border border-white/20 dark:border-white/10 p-6 text-center"
+                        >
+                            <div className="mx-auto size-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">
+                                <Trash2 className="size-6 text-red-500 dark:text-red-400" />
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Delete Post?</h3>
+                            <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">
+                                Are you sure you want to delete this post? This action cannot be undone.
+                            </p>
+                            <div className="flex gap-3 justify-center">
+                                <button
+                                    onClick={() => setShowDeleteModal(false)}
+                                    className="px-5 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmDelete}
+                                    className="px-5 py-2.5 rounded-xl text-sm font-medium bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/30 transition-all hover:scale-105 active:scale-95"
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </article>
     );
 };

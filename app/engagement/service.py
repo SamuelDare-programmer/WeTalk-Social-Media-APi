@@ -395,8 +395,16 @@ class EngagementService:
         
         posts, liked_ids = await asyncio.gather(posts_task, likes_task)
         
+        # Fetch Authors of Original Posts (for shared posts)
+        op_owner_ids = []
+        for p in posts:
+            if p.original_post:
+                op_owner_ids.append(PydanticObjectId(p.original_post.owner_id))
+
         # Fetch Authors
         owner_ids = list({PydanticObjectId(p.owner_id) for p in posts})
+        if op_owner_ids:
+            owner_ids.extend(op_owner_ids)
         users = await User.find(In(User.id, owner_ids)).to_list()
         user_map = {str(u.id): u for u in users}
 
@@ -436,6 +444,30 @@ class EngagementService:
                     # though model_dump usually keeps ObjectId unless configured otherwise.
                     loc_dump["_id"] = str(post.location.id)
                     post_dict["location"] = loc_dump
+                
+                # Map original_post if exists
+                if post.original_post:
+                    op = post.original_post
+                    op_dict = op.model_dump()
+                    op_dict["_id"] = str(op.id)
+                    op_dict["id"] = str(op.id)
+                    
+                    op_author = user_map.get(op.owner_id)
+                    if op_author:
+                        op_dict["author"] = UserPublicModel(**op_author.model_dump()).model_dump()
+                        
+                    if op.media:
+                        op_dict["media"] = [
+                            {
+                                "media_id": str(m.id),
+                                "view_link": m.view_link,
+                                "media_type": m.media_type
+                            } for m in op.media
+                        ]
+                    else:
+                        op_dict["media"] = []
+                        
+                    post_dict["original_post"] = op_dict
 
                 post_dict["is_bookmarked"] = True
                 post_dict["is_liked"] = b.post_id in liked_set
@@ -477,6 +509,15 @@ class EngagementService:
         target_post = await Post.get(target_post_id)
         if target_post:
             await target_post.inc({Post.share_count: 1})
+            
+            if str(target_post.owner_id) != user_id:
+                await self.notification_service.create_notification(
+                    recipient_id=str(target_post.owner_id),
+                    actor_id=user_id,
+                    type="share",
+                    target_id=str(new_post.id),
+                    metadata={"preview": caption[:50] if caption else "shared your post"}
+                )
         
         # 5. Fetch links for response
         await new_post.fetch_link(Post.original_post)

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, MessageCircle, UserPlus, Star, MoreHorizontal, Loader2, Check } from 'lucide-react';
+import { Heart, MessageCircle, UserPlus, Star, MoreHorizontal, Loader2, Check, Repeat } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import axios from '../api/axios';
@@ -61,6 +61,7 @@ const Notifications = () => {
             case 'follow': return <UserPlus className="size-4 text-blue-500" />;
             case 'comment': return <MessageCircle className="size-4 text-green-500" />;
             case 'mention': return <span className="text-xs font-bold text-primary">@</span>;
+            case 'share': return <Repeat className="size-4 text-green-500" />;
             default: return <Star className="size-4 text-yellow-500" />;
         }
     };
@@ -71,6 +72,7 @@ const Notifications = () => {
             case 'follow': return 'started following you.';
             case 'comment': return `commented: "${notif.metadata?.preview || 'nice!'}"`;
             case 'mention': return 'mentioned you in a comment.';
+            case 'share': return 'shared your post.';
             default: return 'interacted with you.';
         }
     };

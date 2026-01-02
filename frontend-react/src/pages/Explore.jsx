@@ -55,7 +55,12 @@ const Explore = () => {
                 }
 
                 const res = await axios.get(endpoint);
-                setPosts(res.data);
+
+                let data = res.data;
+                if (!queryParam && Array.isArray(data)) {
+                    data = data.filter(post => post.media && post.media.length > 0);
+                }
+                setPosts(data);
             } catch (err) {
                 console.error('Failed to fetch explore content', err);
             } finally {

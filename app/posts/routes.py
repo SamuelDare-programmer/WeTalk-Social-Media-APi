@@ -125,8 +125,14 @@ async def get_posts(
     posts = await post_service.get_all_posts(limit=limit, offset=offset)
 
     # Fetch authors for these posts to populate the 'author' field
-    owner_ids = list({PydanticObjectId(post.owner_id) for post in posts})
-    users = await User.find(In(User.id, owner_ids)).to_list()
+    owner_ids = {PydanticObjectId(post.owner_id) for post in posts}
+    
+    # Also collect original post owner IDs
+    for post in posts:
+        if post.original_post and hasattr(post.original_post, "owner_id"):
+             owner_ids.add(PydanticObjectId(post.original_post.owner_id))
+
+    users = await User.find(In(User.id, list(owner_ids))).to_list()
     user_map = {str(u.id): u for u in users}
     
     # Helper to safely convert user to public model
@@ -135,7 +141,8 @@ async def get_posts(
         return UserPublicModel(**user.model_dump()) if user else None
 
     # Fetch engagement status
-    post_ids = [str(p.id) for p in posts]
+    post_ids = [str(p.id) for p in posts] + [str(p.original_post.id) for p in posts if p.original_post and hasattr(p.original_post, "id")]
+    
     liked_ids, bookmarked_ids = await asyncio.gather(
         engagement_service.get_liked_post_ids(str(current_user.id), post_ids),
         engagement_service.get_bookmarked_post_ids(str(current_user.id), post_ids)
@@ -161,7 +168,27 @@ async def get_posts(
             created_at=post.created_at,
             location=post.location,
             is_liked=str(post.id) in liked_set,
-            is_bookmarked=str(post.id) in bookmarked_set
+            is_bookmarked=str(post.id) in bookmarked_set,
+            original_post=PostResponse(
+                id=str(post.original_post.id),
+                owner_id=post.original_post.owner_id,
+                author=get_author_model(post.original_post.owner_id),
+                caption=post.original_post.caption,
+                media=[
+                    {
+                        "media_id": str(m.id),
+                        "view_link": m.view_link,
+                        "media_type": m.media_type
+                    } for m in post.original_post.media
+                ] if post.original_post.media else [],
+                likes_count=post.original_post.likes_count,
+                comments_count=post.original_post.comments_count,
+                share_count=getattr(post.original_post, "share_count", 0),
+                created_at=post.original_post.created_at,
+                location=post.original_post.location,
+                is_liked=str(post.original_post.id) in liked_set,
+                is_bookmarked=str(post.original_post.id) in bookmarked_set
+            ) if post.original_post and hasattr(post.original_post, "owner_id") else None
         ) for post in posts
     ]
 
@@ -250,8 +277,14 @@ async def get_user_liked_posts(
         return []
 
     # Fetch authors
-    owner_ids = list({PydanticObjectId(post.owner_id) for post in posts})
-    users = await User.find(In(User.id, owner_ids)).to_list()
+    owner_ids = {PydanticObjectId(post.owner_id) for post in posts}
+    
+    # Also collect original post owner IDs
+    for post in posts:
+        if post.original_post and hasattr(post.original_post, "owner_id"):
+             owner_ids.add(PydanticObjectId(post.original_post.owner_id))
+
+    users = await User.find(In(User.id, list(owner_ids))).to_list()
     user_map = {str(u.id): u for u in users}
     
     def get_author_model(owner_id):
@@ -259,7 +292,7 @@ async def get_user_liked_posts(
         return UserPublicModel(**user.model_dump()) if user else None
 
     # Fetch engagement status for current_user
-    post_ids = [str(p.id) for p in posts]
+    post_ids = [str(p.id) for p in posts] + [str(p.original_post.id) for p in posts if p.original_post and hasattr(p.original_post, "id")]
     liked_ids, bookmarked_ids = await asyncio.gather(
         engagement_service.get_liked_post_ids(str(current_user.id), post_ids),
         engagement_service.get_bookmarked_post_ids(str(current_user.id), post_ids)
@@ -285,7 +318,27 @@ async def get_user_liked_posts(
             created_at=post.created_at,
             location=post.location,
             is_liked=str(post.id) in liked_set,
-            is_bookmarked=str(post.id) in bookmarked_set
+            is_bookmarked=str(post.id) in bookmarked_set,
+            original_post=PostResponse(
+                id=str(post.original_post.id),
+                owner_id=post.original_post.owner_id,
+                author=get_author_model(post.original_post.owner_id),
+                caption=post.original_post.caption,
+                media=[
+                    {
+                        "media_id": str(m.id),
+                        "view_link": m.view_link,
+                        "media_type": m.media_type
+                    } for m in post.original_post.media
+                ] if post.original_post.media else [],
+                likes_count=post.original_post.likes_count,
+                comments_count=post.original_post.comments_count,
+                share_count=getattr(post.original_post, "share_count", 0),
+                created_at=post.original_post.created_at,
+                location=post.original_post.location,
+                is_liked=str(post.original_post.id) in liked_set,
+                is_bookmarked=str(post.original_post.id) in bookmarked_set
+            ) if post.original_post and hasattr(post.original_post, "owner_id") else None
         ) for post in posts
     ]
 
@@ -325,6 +378,29 @@ async def share_post(
         location_id=location_id
     )
     
+    original_post_resp = None
+    if new_post.original_post:
+        op = new_post.original_post
+        op_user = await User.get(PydanticObjectId(op.owner_id))
+        original_post_resp = PostResponse(
+            id=str(op.id),
+            owner_id=op.owner_id,
+            author=UserPublicModel(**op_user.model_dump()) if op_user else None,
+            caption=op.caption,
+            media=[
+                {
+                    "media_id": str(m.id),
+                    "view_link": m.view_link,
+                    "media_type": m.media_type
+                } for m in op.media
+            ] if op.media else [],
+            likes_count=op.likes_count,
+            comments_count=op.comments_count,
+            share_count=getattr(op, "share_count", 0),
+            created_at=op.created_at,
+            location=op.location
+        )
+
     return PostResponse(
         id=str(new_post.id),
         owner_id=new_post.owner_id,
@@ -335,7 +411,8 @@ async def share_post(
         comments_count=new_post.comments_count,
         share_count=new_post.share_count,
         created_at=new_post.created_at,
-        location=new_post.location
+        location=new_post.location,
+        original_post=original_post_resp
     )
 
 @router.get("/{post_id}", response_model=PostResponse)
@@ -343,6 +420,29 @@ async def get_post(post_id: str):
     post_service = PostService()
     post = await post_service.get_post(post_id)
     user = await User.get(PydanticObjectId(post.owner_id))
+    
+    original_post_resp = None
+    if post.original_post and hasattr(post.original_post, "owner_id"):
+        op = post.original_post
+        op_user = await User.get(PydanticObjectId(op.owner_id))
+        original_post_resp = PostResponse(
+            id=str(op.id),
+            owner_id=op.owner_id,
+            author=UserPublicModel(**op_user.model_dump()) if op_user else None,
+            caption=op.caption,
+            media=[
+                {
+                    "media_id": str(m.id),
+                    "view_link": m.view_link,
+                    "media_type": m.media_type
+                } for m in op.media
+            ] if op.media else [],
+            likes_count=op.likes_count,
+            comments_count=op.comments_count,
+            share_count=getattr(op, "share_count", 0),
+            created_at=op.created_at,
+            location=op.location
+        )
     
     return PostResponse(
         id=str(post.id),
@@ -359,7 +459,8 @@ async def get_post(post_id: str):
         likes_count=post.likes_count,
         comments_count=post.comments_count,
         created_at=post.created_at,
-        location=post.location
+        location=post.location,
+        original_post=original_post_resp
     )
 
 @router.delete("/{post_id}", status_code=status.HTTP_204_NO_CONTENT)

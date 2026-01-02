@@ -173,6 +173,10 @@ const Profile = () => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [selectedMediaIndex, media.length]);
 
+    const handleDeletePost = (postId) => {
+        setPosts(prev => prev.filter(p => (p.id || p._id) !== postId));
+    };
+
     if (loading && !profileUser) {
         return (
             <div className="flex flex-col items-center justify-center py-20">
@@ -289,6 +293,7 @@ const Profile = () => {
                                 key={post.id}
                                 post={post}
                                 onComment={() => setSelectedPost(post)}
+                                onDelete={handleDeletePost}
                             />
                         ))}
 
