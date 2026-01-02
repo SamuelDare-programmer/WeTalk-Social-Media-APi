@@ -8,6 +8,7 @@ from app.posts.models import Media
 from app.core.db.models import User
 from app.core.errors import ConversationNotFoundException, ContentValidationException
 from beanie.operators import In, And
+from beanie import PydanticObjectId
 
 class ConnectionManager:
     """
@@ -80,7 +81,15 @@ class MessengerService:
         for c in conversations:
             all_participant_ids.update(c.participants)
             
-        users = await User.find(In(User.id, list(all_participant_ids))).to_list()
+        # Convert string IDs to PydanticObjectId for query
+        p_ids = []
+        for pid in all_participant_ids:
+            try:
+                p_ids.append(PydanticObjectId(pid))
+            except:
+                continue
+        
+        users = await User.find(In(User.id, p_ids)).to_list()
         user_map = {str(u.id): u for u in users}
         
         results = []
@@ -95,7 +104,7 @@ class MessengerService:
                     display_participants.append({
                         "user_id": str(u.id),
                         "username": u.username,
-                        "avatar_url": u.profile_image
+                        "avatar_url": u.avatar_url
                     })
             
             results.append(ConversationResponse(
@@ -205,3 +214,44 @@ class MessengerService:
                 is_me=(m.sender_id == user_id)
             ))
         return results
+
+    @staticmethod
+    async def delete_conversation(user_id: str, conversation_id: str):
+        conv = await Conversation.get(conversation_id)
+        if not conv or user_id not in conv.participants:
+            raise ConversationNotFoundException("Conversation not found")
+
+        conv.participants.remove(user_id)
+        
+        if conv.pinned_by and user_id in conv.pinned_by:
+            conv.pinned_by.remove(user_id)
+
+        if not conv.participants:
+            await conv.delete()
+            await Message.find(Message.conversation_id == conversation_id).delete()
+        else:
+            await conv.save()
+
+    @staticmethod
+    async def delete_message(user_id: str, message_id: str):
+        msg = await Message.get(message_id)
+        if not msg:
+            raise ConversationNotFoundException("Message not found")
+            
+        if msg.sender_id != user_id:
+            raise ContentValidationException("You can only delete your own messages")
+
+        conversation_id = msg.conversation_id
+        await msg.delete()
+
+        # Broadcast deletion event
+        payload = {
+            "type": "message_deleted",
+            "conversation_id": conversation_id,
+            "message_id": str(msg.id)
+        }
+        
+        conv = await Conversation.get(conversation_id)
+        if conv:
+            for pid in conv.participants:
+                await manager.send_personal_message(payload, pid)

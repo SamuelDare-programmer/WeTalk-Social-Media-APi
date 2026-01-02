@@ -142,3 +142,6 @@ class UserService:
         user.password_hash = hash_password(payload.new_password)
         await user.save()
     
+    async def get_user_by_username_or_email(self, identifier: str):
+        return await self.get_user(identifier)
+    

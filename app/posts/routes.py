@@ -109,6 +109,11 @@ async def get_medialist():
 
     return media_list
 
+@router.get("/media/user/{user_id}")
+async def get_user_media(user_id: str):
+    media_service = MediaService()
+    return await media_service.get_user_media(user_id)
+
 @router.get("/", response_model=List[PostResponse])
 async def get_posts(
     limit: int = Query(10, le=50),
@@ -225,6 +230,64 @@ async def get_user_posts(
         )
 
     return [map_post(post) for post in posts]
+
+@router.get("/user/{user_id}/likes", response_model=List[PostResponse])
+async def get_user_liked_posts(
+    user_id: str,
+    limit: int = Query(10, le=50),
+    offset: int = 0,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get posts liked by a specific user.
+    """
+    post_service = PostService()
+    engagement_service = EngagementService()
+    
+    posts = await post_service.get_liked_posts(user_id, limit, offset)
+    
+    if not posts:
+        return []
+
+    # Fetch authors
+    owner_ids = list({PydanticObjectId(post.owner_id) for post in posts})
+    users = await User.find(In(User.id, owner_ids)).to_list()
+    user_map = {str(u.id): u for u in users}
+    
+    def get_author_model(owner_id):
+        user = user_map.get(owner_id)
+        return UserPublicModel(**user.model_dump()) if user else None
+
+    # Fetch engagement status for current_user
+    post_ids = [str(p.id) for p in posts]
+    liked_ids, bookmarked_ids = await asyncio.gather(
+        engagement_service.get_liked_post_ids(str(current_user.id), post_ids),
+        engagement_service.get_bookmarked_post_ids(str(current_user.id), post_ids)
+    )
+    liked_set = set(liked_ids)
+    bookmarked_set = set(bookmarked_ids)
+
+    return [
+        PostResponse(
+            id=str(post.id),
+            owner_id=post.owner_id,
+            author=get_author_model(post.owner_id),
+            caption=post.caption,
+            media=[
+                {
+                    "media_id": str(media.id),
+                    "view_link": media.view_link,
+                    "media_type": media.media_type
+                } for media in post.media
+            ],
+            likes_count=post.likes_count,
+            comments_count=post.comments_count,
+            created_at=post.created_at,
+            location=post.location,
+            is_liked=str(post.id) in liked_set,
+            is_bookmarked=str(post.id) in bookmarked_set
+        ) for post in posts
+    ]
 
 # @router.post("/{post_id}/likes", status_code=status.HTTP_201_CREATED)
 # async def like_post(

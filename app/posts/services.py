@@ -1,6 +1,7 @@
 from app.posts.schemas import CreatePostRequest
 from .models import Media, Post, MediaStatus
 from beanie import PydanticObjectId
+from beanie.operators import In
 from bson.errors import InvalidId
 from app.core.errors import PostNotFoundException, MediaValidationException, UnauthorizedActionException, ContentValidationException
 from app.discovery.models import Location
@@ -98,6 +99,33 @@ class PostService:
             .limit(limit)
             .to_list()
         )
+
+    async def get_liked_posts(self, user_id: str, limit: int = 10, offset: int = 0) -> list[Post]:
+        from app.engagement.models import PostLike
+        
+        # Get post IDs liked by user (newest likes first)
+        likes = await PostLike.find(PostLike.user_id == user_id).sort(-PostLike.created_at).skip(offset).limit(limit).to_list()
+        if not likes:
+            return []
+            
+        post_ids = []
+        for like in likes:
+            try:
+                post_ids.append(PydanticObjectId(like.post_id))
+            except (InvalidId, TypeError):
+                continue
+
+        posts = await Post.find(In(Post.id, post_ids), fetch_links=True).to_list()
+        
+        # Sort posts by the order they appear in 'likes'
+        posts_map = {str(p.id): p for p in posts}
+        ordered_posts = []
+        for like in likes:
+            p = posts_map.get(like.post_id)
+            if p:
+                ordered_posts.append(p)
+                
+        return ordered_posts
 
     async def delete_post(self, post_id: str, user_id: str):
         post = await Post.get(PydanticObjectId(post_id), fetch_links=True)

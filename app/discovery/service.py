@@ -15,12 +15,13 @@ class DiscoveryService:
         # Regex search for autocomplete (Match from start)
         return await Hashtag.find({"name": {"$regex": f"^{query}", "$options": "i"}}).limit(limit).to_list()
 
-    async def search_locations(self, query: str, limit: int = 20) -> List[Location]:
+    async def search_locations(self, query: str, limit: int = 20, lat: Optional[float] = None, lng: Optional[float] = None) -> List[Location]:
         query = query.strip()
         if not query: 
             return []
         
         # 1. Search Local DB first
+        # (Optional: Use geospatial query if lat/lng provided, but regex is fine for now)
         local_results = await Location.find({"name": {"$regex": query, "$options": "i"}}).limit(limit).to_list()
         
         # If we have enough local results, return them to save API calls
@@ -28,11 +29,13 @@ class DiscoveryService:
             return local_results
 
         # 2. Search External API (Radar.io)
-        external_data = await self._fetch_radar_locations(query, limit)
+        external_data = await self._fetch_radar_locations(query, limit, lat, lng)
         
         # 3. Merge & Cache (Write on Demand)
+        # If we reached here, local results were insufficient (< 5). 
+        # We prioritize external results to ensure relevance and filter out stale/weak local matches.
         final_results = list(local_results)
-        existing_ids = {str(loc.provider_id) for loc in local_results if loc.provider_id}
+        existing_ids = {loc.provider_id for loc in local_results if loc.provider_id}
         
         for item in external_data:
             ext_id = item["provider_id"]
@@ -53,10 +56,20 @@ class DiscoveryService:
                     provider="radar",
                     address=item.get("full_address")
                 )
-                await new_loc.save()
-                final_results.append(new_loc)
-                existing_ids.add(ext_id)
+                try:
+                    await new_loc.save()
+                    final_results.append(new_loc)
+                    existing_ids.add(ext_id)
+                except Exception as e:
+                    # Likely DuplicateKeyError race condition
+                    print(f"DEBUG: Race condition handling for {ext_id}: {e}")
+                    # Try to fetch it again
+                    existing = await Location.find_one({"provider_id": ext_id})
+                    if existing:
+                        final_results.append(existing)
+                        existing_ids.add(ext_id)
         
+        print(f"DEBUG: Final results: {[l.name for l in final_results]}")
         return final_results[:limit]
 
     async def search_users(self, query: str, current_user_id: str, limit: int = 20) -> List[Dict[str, Any]]:
@@ -229,51 +242,175 @@ class DiscoveryService:
                 await PostTag(post_id=post_id, hashtag_id=str(hashtag.id)).insert()
                 await hashtag.inc({Hashtag.post_count: 1})
 
-    async def _fetch_radar_locations(self, query: str, limit: int) -> List[Dict[str, Any]]:
+    async def _fetch_radar_locations(self, query: str, limit: int, lat: Optional[float] = None, lng: Optional[float] = None) -> List[Dict[str, Any]]:
         """
-        Proxies the search to Radar.io.
+        Hybrid Search:
+        1. Autocomplete (Addresses/Cities)
+        2. Places Search (POIs like 'Shoprite') if lat/lng is provided or we default to a central location.
         """
-        url = "https://api.radar.io/v1/search/autocomplete"
-        headers = {
-            "Authorization": f"{settings.RADAR_SECRET_KEY}"
-        }
-        params = {
-            "query": query,
-            "limit": limit,
-            "layers": "place,address"
-        }
+        async with httpx.AsyncClient() as client:
+            # Task 1: Autocomplete (Best for cities/addresses)
+            autocomplete_url = "https://api.radar.io/v1/search/autocomplete"
+            headers = {"Authorization": f"{settings.RADAR_SECRET_KEY}"}
+            ac_params = {
+                "query": query,
+                "limit": limit,
+                "layers": "place,address" # exclude 'poi' here if we use places endpoint, or keep it.
+            }
+            if lat and lng:
+                ac_params["near"] = f"{lat},{lng}"
 
+            # Task 2: Places Search (Best for POIs)
+            # We need categories to search effectively. We'll include broad top-level categories.
+            # See Radar categories: https://radar.com/documentation/places/categories
+            places_url = "https://api.radar.io/v1/search/places"
+            places_params = {
+                "query": query, # Text match on place name
+                "limit": limit,
+                "categories": "shopping-retail,food-beverage,entertainment-nightlife,travel-transportation",
+                "radius": 10000 # 10km radius
+            }
+            if lat and lng:
+                places_params["near"] = f"{lat},{lng}"
+            else:
+                # If no user location, bias to Nigeria (Lagos approx center for broad search)
+                # Or skip places search if strictly requires location? Radar allows basic search maybe.
+                # Let's try to bias to Lagos if no coords provided, to fix the 'default US' issue.
+                places_params["near"] = "6.5244,3.3792" 
+
+            tasks = [
+                client.get(autocomplete_url, params=ac_params, headers=headers),
+                client.get(places_url, params=places_params, headers=headers)
+            ]
+            
+            responses = await asyncio.gather(*tasks, return_exceptions=True)
+            
+            # Process Results
+            merged_results = []
+            seen_ids = set()
+
+            # Helper to parse standard place object
+            def parse_place(item, is_autocomplete=False):
+                pid = item.get("placeId") or item.get("_id") or item.get("id")
+                
+                # Check duplication
+                if not pid or pid in seen_ids:
+                    return None
+                
+                name = item.get("placeLabel") or item.get("name") or item.get("addressLabel")
+                
+                # Address handling
+                if is_autocomplete:
+                    raw_addr = item.get("formattedAddress", "")
+                else:
+                    # Places API returns address components differently usually
+                    # But often has 'address' field? Let's check keys or construct.
+                    # Fallback to simple construction
+                    loc = item.get("location", {})
+                    raw_addr = loc.get("address") or item.get("formattedAddress") or ""
+                    if not raw_addr:
+                         # Construct from components if available
+                         raw_addr = ", ".join(filter(None, [
+                             loc.get("address"), item.get("city"), item.get("state"), item.get("country")
+                         ]))
+
+                # Clean address logic
+                if not raw_addr or "undefined" in raw_addr.lower():
+                     raw_addr = name # Fallback
+                
+                # Coords
+                if is_autocomplete:
+                    c_lat = item.get("latitude")
+                    c_lng = item.get("longitude")
+                else:
+                    geo = item.get("location", {}).get("coordinates", [])
+                    c_lng = geo[0] if len(geo) > 1 else None
+                    c_lat = geo[1] if len(geo) > 1 else None
+
+                if c_lat is None or c_lng is None:
+                    return None
+                
+                if not pid:
+                     pid = f"radar:{c_lat},{c_lng}"
+
+                seen_ids.add(pid)
+                return {
+                    "provider_id": pid,
+                    "name": name,
+                    "full_address": raw_addr,
+                    "coordinates": {"lat": c_lat, "lng": c_lng}
+                }
+
+            # 1. Parse Places Response (High priority for POIs)
+            if isinstance(responses[1], httpx.Response) and responses[1].status_code == 200:
+                p_data = responses[1].json()
+                for p in p_data.get("places", []):
+                    parsed = parse_place(p, is_autocomplete=False)
+                    if parsed: merged_results.append(parsed)
+
+            # 2. Parse Autocomplete Response (High priority for Geocoding)
+            if isinstance(responses[0], httpx.Response) and responses[0].status_code == 200:
+                a_data = responses[0].json()
+                for a in a_data.get("addresses", []):
+                    parsed = parse_place(a, is_autocomplete=True)
+                    if parsed: merged_results.append(parsed)
+            
+            return merged_results
+
+    async def _fetch_radar_reverse(self, lat: float, lng: float) -> Optional[Dict[str, Any]]:
+        url = "https://api.radar.io/v1/geocode/reverse"
+        headers = {"Authorization": settings.RADAR_SECRET_KEY}
+        params = {"coordinates": f"{lat},{lng}"}
+        
         async with httpx.AsyncClient() as client:
             try:
                 response = await client.get(url, params=params, headers=headers)
-                if response.status_code != 200:
-                    return []
-                
-                data = response.json()
-                results = []
-                for address in data.get("addresses", []):
-                    # Safely build address to avoid "undefined" bug
-                    # Try formattedAddress first, but fallback to manual construction if it looks broken
-                    clean_address = address.get("formattedAddress", "")
-                    
-                    if not clean_address or "undefined" in clean_address:
-                        addr_parts = [
-                            address.get("number"),
-                            address.get("street"),
-                            address.get("city"),
-                            address.get("state"),
-                            address.get("countryCode")
-                        ]
-                        # Filter out None or empty strings and join
-                        clean_address = ", ".join([str(p).strip() for p in addr_parts if p])
-
-                    results.append({
-                        "provider_id": address.get("placeId") or address.get("id"),
-                        "name": address.get("placeLabel") or address.get("addressLabel"),
-                        "full_address": clean_address,
-                        "coordinates": {"lat": address["latitude"], "lng": address["longitude"]}
-                    })
-                return results
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get("addresses"):
+                        addr = data["addresses"][0]
+                        # Best effort name
+                        name = addr.get("placeLabel") or addr.get("addressLabel") or addr.get("formattedAddress")
+                        return {
+                            "name": name,
+                            "address": addr.get("formattedAddress"),
+                            "city": addr.get("city"),
+                            "state": addr.get("state"),
+                            "country": addr.get("country")
+                        }
             except Exception as e:
-                print(f"Radar API Error: {e}")
-                return []
+                print(f"Radar Reverse Geocode Error: {e}")
+        return None
+
+    async def create_custom_location(self, name: str, address: Optional[str], city: Optional[str], state: Optional[str], country: Optional[str], lat: Optional[float] = None, lng: Optional[float] = None) -> Location:
+        # Construct Address
+        parts = [city, state, country]
+        full_address = address or ", ".join([p for p in parts if p])
+        
+        # Create
+        pid = f"user:{PydanticObjectId()}"
+        loc_data = {
+            "name": name,
+            "location": {"type": "Point", "coordinates": [lng or 0.0, lat or 0.0]}, # Default to 0,0 if no coords
+            "provider_id": pid,
+            "provider": "user",
+            "address": full_address
+        }
+        
+        new_loc = Location(**loc_data)
+        await new_loc.save()
+        return new_loc
+
+    async def get_posts_by_location(self, location_id: str, limit: int = 20, offset: int = 0) -> List[Post]:
+        # 1. Verify Location
+        location = await Location.get(PydanticObjectId(location_id))
+        if not location:
+            return []
+        
+        # 2. Find Posts
+        # Note: We query the 'location.id' field or the link. 
+        # Beanie models link objects, so we can query on the reference or use aggregate.
+        # Simple match:
+        posts = await Post.find(Post.location.id == PydanticObjectId(location_id), fetch_links=True).sort("-created_at").skip(offset).limit(limit).to_list()
+        
+        return posts

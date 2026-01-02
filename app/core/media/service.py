@@ -96,3 +96,17 @@ class MediaService:
     async def get_all_media(self):
             media = await Media.find_all().to_list()
             return media
+
+    async def get_user_media(self, user_id: str):
+        from app.posts.models import Post
+        posts = await Post.find(Post.owner_id == user_id, fetch_links=True).sort("-created_at").to_list()
+        
+        media_list = []
+        seen = set()
+        for post in posts:
+            if post.media:
+                for m in post.media:
+                    if m.id not in seen:
+                        media_list.append(m)
+                        seen.add(m.id)
+        return media_list

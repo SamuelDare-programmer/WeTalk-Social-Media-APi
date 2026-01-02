@@ -89,3 +89,10 @@ async def password_reset_confirm(token: str):
 async def confirm_password_reset(payload: PasswordResetModel):
     await user_service.complete_password_reset(payload)
     return JSONResponse(content={"message": "Password has been reset successfully."})
+
+@router.get("/{identifier}", response_model=UserPublicModel)
+async def get_user_by_identifier(identifier: str):
+    user = await user_service.get_user_by_username_or_email(identifier)
+    if not user:
+        raise UserNotFoundException()
+    return user

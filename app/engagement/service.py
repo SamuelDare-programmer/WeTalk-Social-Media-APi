@@ -395,6 +395,11 @@ class EngagementService:
         
         posts, liked_ids = await asyncio.gather(posts_task, likes_task)
         
+        # Fetch Authors
+        owner_ids = list({PydanticObjectId(p.owner_id) for p in posts})
+        users = await User.find(In(User.id, owner_ids)).to_list()
+        user_map = {str(u.id): u for u in users}
+
         posts_map = {str(p.id): p for p in posts}
         
         liked_set = set(liked_ids)
@@ -406,6 +411,11 @@ class EngagementService:
                 # Convert Post to dict structure compatible with PostResponse
                 post_dict = post.model_dump()
                 post_dict["_id"] = str(post.id) # Ensure ID is string
+                
+                # Populate Author
+                author = user_map.get(post.owner_id)
+                if author:
+                    post_dict["author"] = UserPublicModel(**author.model_dump()).model_dump()
                 
                 # Map media objects to match MediaResponse schema (id -> media_id)
                 if post.media:
