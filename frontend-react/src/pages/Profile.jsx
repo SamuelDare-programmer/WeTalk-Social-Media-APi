@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from '../api/axios';
 import PostCard from '../components/PostCard';
 import { useAuth } from '../context/AuthContext';
-import { Loader2, Edit, UserPlus, Mail, Grid, Play, Heart, Bookmark, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, Edit, UserPlus, UserCheck, Mail, Grid, Play, Heart, Bookmark, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import PostDetailModal from '../components/PostDetailModal';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -15,6 +15,7 @@ const Profile = () => {
 
     const [profileUser, setProfileUser] = useState(null);
     const [posts, setPosts] = useState([]);
+    const [isFollowing, setIsFollowing] = useState(false);
     const [media, setMedia] = useState([]);
     const [likedPosts, setLikedPosts] = useState([]);
     const [savedPosts, setSavedPosts] = useState([]);
@@ -44,6 +45,17 @@ const Profile = () => {
                 }
                 setProfileUser(userRes.data);
 
+                // Check follow status if not owner
+                if (currentUser && userRes.data.username !== currentUser.username) {
+                    try {
+                        const searchRes = await axios.get(`/discovery/search?q=${userRes.data.username}&type=user`);
+                        const foundUser = searchRes.data.find(u => u.username === userRes.data.username);
+                        if (foundUser) setIsFollowing(foundUser.is_following);
+                    } catch (e) {
+                        console.error("Failed to check follow status", e);
+                    }
+                }
+
                 const postsRes = await axios.get(`/posts/user/${userRes.data.id || userRes.data._id}?limit=20`);
                 // Deduplicate posts
                 const uniquePosts = [];
@@ -66,6 +78,47 @@ const Profile = () => {
         };
         fetchProfile();
     }, [username]);
+
+    const handleFollow = async () => {
+        if (!profileUser) return;
+
+        const prevIsFollowing = isFollowing;
+        const targetUsername = profileUser._id;
+
+        // Optimistic Update
+        setIsFollowing(!prevIsFollowing);
+        setProfileUser(prev => ({
+            ...prev,
+            followers_count: prevIsFollowing ? (prev.followers_count - 1) : (prev.followers_count + 1)
+        }));
+
+        try {
+            if (prevIsFollowing) {
+                await axios.post(`/users/${targetUsername}/unfollow`);
+            } else {
+                await axios.post(`/users/${targetUsername}/follow`);
+            }
+        } catch (err) {
+            console.error('Follow action failed', err);
+            setIsFollowing(prevIsFollowing);
+            setProfileUser(prev => ({
+                ...prev,
+                followers_count: prevIsFollowing ? (prev.followers_count + 1) : (prev.followers_count - 1)
+            }));
+        }
+    };
+
+    const handleMessage = async () => {
+        if (!profileUser) return;
+        try {
+            const res = await axios.post('/conversations/', {
+                participant_ids: [profileUser.id || profileUser._id]
+            });
+            navigate('/messages', { state: { openChatId: res.data._id } });
+        } catch (err) {
+            console.error('Failed to start conversation', err);
+        }
+    };
 
     useEffect(() => {
         if (activeTab === 'media' && media.length === 0 && profileUser) {
@@ -164,10 +217,19 @@ const Profile = () => {
                                 </button>
                             ) : (
                                 <>
-                                    <button className="flex items-center gap-2 px-6 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-indigo-600 transition-all shadow-md shadow-primary/20">
-                                        <UserPlus className="size-4 text-white" /> Follow
+                                    <button
+                                        onClick={handleFollow}
+                                        className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-bold transition-all shadow-md ${isFollowing
+                                            ? 'bg-green-500 text-white hover:bg-green-600 shadow-green-500/20'
+                                            : 'bg-primary text-white hover:bg-indigo-600 shadow-primary/20'}`}
+                                    >
+                                        {isFollowing ? <UserCheck className="size-4" /> : <UserPlus className="size-4" />}
+                                        {isFollowing ? 'Following' : 'Follow'}
                                     </button>
-                                    <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-white/10 border border-slate-200 dark:border-border-dark rounded-lg text-sm font-bold hover:bg-slate-50 dark:hover:bg-white/5 transition-all text-slate-900 dark:text-white">
+                                    <button
+                                        onClick={handleMessage}
+                                        className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-white/10 border border-slate-200 dark:border-border-dark rounded-lg text-sm font-bold hover:bg-slate-50 dark:hover:bg-white/5 transition-all text-slate-900 dark:text-white"
+                                    >
                                         <Mail className="size-4" /> Message
                                     </button>
                                 </>

@@ -9,6 +9,7 @@ const Navbar = (props) => {
     const [user, setUser] = useState(null);
     const [isHovered, setIsHovered] = useState(false);
     const [showCreateOptions, setShowCreateOptions] = useState(false);
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
     const navigate = useNavigate();
     const location = useLocation();
     const { isDarkMode, toggleTheme } = useTheme();
@@ -23,6 +24,16 @@ const Navbar = (props) => {
             }
         };
         fetchUser();
+    }, []);
+
+    // Handle window resize for responsive behavior
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth < 1024);
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
     }, []);
 
     const navItems = [
@@ -41,19 +52,19 @@ const Navbar = (props) => {
 
     return (
         <motion.nav
-            onMouseEnter={() => setIsHovered(true)}
+            onMouseEnter={() => !isMobile && setIsHovered(true)}
             onMouseLeave={() => { setIsHovered(false); setShowCreateOptions(false); }}
             initial={false}
             animate={{
-                width: window.innerWidth >= 1024 ? (isHovered ? 240 : 80) : 280,
-                x: window.innerWidth >= 1024 ? 0 : (props.isOpen ? 0 : '-100%')
+                width: isMobile ? 280 : (isHovered ? 240 : 80),
+                x: isMobile ? (props.isOpen ? 0 : '-100%') : 0
             }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             className={`fixed left-0 top-0 h-full bg-white dark:bg-surface-dark border-r border-slate-200 dark:border-border-dark flex flex-col p-3 z-50 overflow-hidden shadow-2xl lg:shadow-none`}
         >
             <div className="mb-6 px-2 flex items-center justify-between h-10">
                 <AnimatePresence mode="wait">
-                    {(isHovered || window.innerWidth < 1024) ? (
+                    {(isHovered || isMobile) ? (
                         <motion.h1
                             key="logo-full"
                             initial={{ opacity: 0, x: -10 }}
@@ -98,7 +109,7 @@ const Navbar = (props) => {
                                 }`}
                         >
                             <item.icon className={`size-6 shrink-0 ${isActive ? 'fill-current' : ''}`} />
-                            {(isHovered || window.innerWidth < 1024) && (
+                            {(isHovered || isMobile) && (
                                 <motion.span
                                     initial={{ opacity: 0, x: -10 }}
                                     animate={{ opacity: 1, x: 0 }}
@@ -118,7 +129,7 @@ const Navbar = (props) => {
                         className="w-full h-11 bg-primary hover:bg-primary-hover text-white rounded-xl shadow-lg shadow-primary/20 flex items-center justify-center gap-4 transition-all"
                     >
                         <PlusSquare className="size-6 shrink-0" />
-                        {(isHovered || window.innerWidth < 1024) && (
+                        {(isHovered || isMobile) && (
                             <motion.span
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
@@ -165,12 +176,12 @@ const Navbar = (props) => {
                 {/* Theme Toggle */}
                 <button
                     onClick={toggleTheme}
-                    className="flex items-center gap-4 px-3 py-3 rounded-xl text-slate-600 dark:text-text-secondary hover:bg-slate-50 dark:hover:bg-white/5 transition-all font-medium"
+                    className="flex items-center gap-4 px-3 py-2.5 rounded-xl text-slate-600 dark:text-text-secondary hover:bg-slate-50 dark:hover:bg-white/5 transition-all font-medium"
                 >
                     <div className="size-6 flex items-center justify-center shrink-0">
                         {isDarkMode ? <Sun className="size-6" /> : <Moon className="size-6" />}
                     </div>
-                    {(isHovered || window.innerWidth < 1024) && (
+                    {(isHovered || isMobile) && (
                         <motion.span
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -183,10 +194,10 @@ const Navbar = (props) => {
 
                 <button
                     onClick={handleLogout}
-                    className="flex items-center gap-4 px-3 py-3 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all font-medium"
+                    className="flex items-center gap-4 px-3 py-2.5 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all font-medium"
                 >
                     <LogOut className="size-6 shrink-0" />
-                    {(isHovered || window.innerWidth < 1024) && (
+                    {(isHovered || isMobile) && (
                         <motion.span
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -201,13 +212,13 @@ const Navbar = (props) => {
             {/* Profile Summary at Bottom */}
             {user && (
                 <div
-                    className="mt-4 flex items-center gap-3 p-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl transition-all h-14 overflow-hidden"
+                    className="mt-3 flex items-center gap-3 p-2 cursor-pointer hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl transition-all h-14 overflow-hidden"
                     onClick={() => { navigate(`/profile/${user.username}`); props.onClose?.(); }}
                 >
                     <div className="size-10 rounded-full overflow-hidden border border-slate-200 dark:border-border-dark shrink-0">
                         <img src={user.avatar_url || `https://ui-avatars.com/api/?name=${user.username}`} alt={user.username} className="w-full h-full object-cover" />
                     </div>
-                    {(isHovered || window.innerWidth < 1024) && (
+                    {(isHovered || isMobile) && (
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}

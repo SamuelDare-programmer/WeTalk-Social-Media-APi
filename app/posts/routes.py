@@ -1,5 +1,5 @@
 from fastapi import APIRouter, status, Depends, UploadFile, File, HTTPException, Query
-from typing import List
+from typing import List, Optional
 import uuid
 import shutil
 import os
@@ -305,6 +305,38 @@ async def get_user_liked_posts(
 # ):
 #     engagement_service = EngagementService()
 #     await engagement_service.unlike_post(user_id=str(current_user.id), post_id=post_id)
+
+@router.post("/{post_id}/share", status_code=status.HTTP_201_CREATED, response_model=PostResponse)
+async def share_post(
+    post_id: str,
+    req: Optional[CreatePostRequest] = None,
+    current_user: User = Depends(get_current_user)
+):
+    engagement_service = EngagementService()
+    caption = req.caption if req else None
+    tags = req.tags if req else []
+    location_id = req.location_id if req else None
+    
+    new_post = await engagement_service.share_post(
+        user_id=str(current_user.id),
+        post_id=post_id,
+        caption=caption,
+        tags=tags,
+        location_id=location_id
+    )
+    
+    return PostResponse(
+        id=str(new_post.id),
+        owner_id=new_post.owner_id,
+        author=UserPublicModel(**current_user.model_dump()),
+        caption=new_post.caption,
+        media=[],
+        likes_count=new_post.likes_count,
+        comments_count=new_post.comments_count,
+        share_count=new_post.share_count,
+        created_at=new_post.created_at,
+        location=new_post.location
+    )
 
 @router.get("/{post_id}", response_model=PostResponse)
 async def get_post(post_id: str):

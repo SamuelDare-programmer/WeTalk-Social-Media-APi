@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from '../api/axios';
-import { Heart, MessageSquare, Share2, Music2, Loader2, Volume2, VolumeX } from 'lucide-react';
+import { Heart, MessageSquare, Music2, Loader2, Volume2, VolumeX } from 'lucide-react';
 import { useVideo } from '../context/VideoContext';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -62,15 +62,6 @@ const ShortCard = ({ post, isActive, onComment }) => {
         }
     };
 
-    const handleShare = async () => {
-        try {
-            await navigator.clipboard.writeText(`${window.location.origin}/post/${postId}`);
-            alert('Link copied to clipboard!');
-        } catch (err) {
-            console.error('Failed to copy', err);
-        }
-    };
-
     const media = post.media?.[0];
     const url = media?.view_link || media?.url;
 
@@ -119,16 +110,6 @@ const ShortCard = ({ post, isActive, onComment }) => {
                         <MessageSquare className="size-7" />
                     </div>
                     <span className="text-white text-xs font-bold">{post.comments_count || 0}</span>
-                </button>
-
-                <button
-                    onClick={handleShare}
-                    className="flex flex-col items-center gap-1 group"
-                >
-                    <div className="p-3 rounded-full bg-black/20 backdrop-blur-md group-hover:bg-black/40 transition-all text-white">
-                        <Share2 className="size-7" />
-                    </div>
-                    <span className="text-white text-xs font-bold">Share</span>
                 </button>
 
                 <button

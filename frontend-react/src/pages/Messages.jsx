@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import axios from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Messages = () => {
     const { user } = useAuth();
@@ -23,6 +23,7 @@ const Messages = () => {
     const messagesEndRef = useRef(null);
     const ws = useRef(null);
     const navigate = useNavigate();
+    const location = useLocation();
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -105,6 +106,16 @@ const Messages = () => {
         };
         fetchInbox();
     }, []);
+
+    // Handle deep linking to a specific chat from Profile
+    useEffect(() => {
+        if (location.state?.openChatId && chats.length > 0 && !selectedChat) {
+            const chatToOpen = chats.find(c => c.id === location.state.openChatId);
+            if (chatToOpen) {
+                setSelectedChat(chatToOpen);
+            }
+        }
+    }, [chats, location.state, selectedChat]);
 
     // Fetch Messages when chat selected
     useEffect(() => {
