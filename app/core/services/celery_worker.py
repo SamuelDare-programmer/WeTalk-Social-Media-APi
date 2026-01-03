@@ -48,6 +48,16 @@ def upload_video_task(media_id: str, file_path: str):
     Celery task to upload a video.
     """
     try:
+        # Debugging: Check if file exists
+        if not os.path.exists(file_path):
+            print(f"ERROR: File not found at {file_path}")
+            print(f"CWD: {os.getcwd()}")
+            dir_path = os.path.dirname(file_path)
+            if os.path.exists(dir_path):
+                print(f"Contents of {dir_path}: {os.listdir(dir_path)}")
+            else:
+                print(f"Directory {dir_path} does not exist")
+
         print(f"Starting background upload for media_id: {media_id}")
         configure_cloudinary()
         # Use upload_large for better video handling

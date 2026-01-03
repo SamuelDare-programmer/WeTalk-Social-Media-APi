@@ -7,6 +7,7 @@ from cloudinary.exceptions import NotFound
 from app.posts.models import Media, MediaStatus, MediaType
 import asyncio
 import uuid
+import os
 
 class MediaService:
     async def upload_image(self, owner_id: str, file_content, filename: str, content_type: str, public_id: str = None):
@@ -66,7 +67,9 @@ class MediaService:
 
             # 2. Queue task with the new media_id
             print(f"Queuing video upload task for media_id: {new_media.id}")
-            task = upload_video_task.delay(media_id=str(new_media.id), file_path=file_path)
+            # Use absolute path to ensure worker finds it regardless of CWD
+            abs_path = os.path.abspath(file_path)
+            task = upload_video_task.delay(media_id=str(new_media.id), file_path=abs_path)
             print(f"Task queued successfully: {task.id}")
             
             return {
