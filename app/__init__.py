@@ -25,11 +25,14 @@ from app.notification.routes import router as notifications_router
 from app.notification.models import Notification
 from app.core.middleware import register_middleware
 # from app.main import router as main_router
+import os
 
 version = "v1"
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # STARTUP
+    os.makedirs(".temp_uploads", exist_ok=True)
+
     configure_cloudinary()
     print("Cloudinary Configured Successfully")
     
