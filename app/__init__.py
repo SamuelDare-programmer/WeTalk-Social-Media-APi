@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends
 from contextlib import asynccontextmanager
 from pymongo import AsyncMongoClient
+import certifi
 from beanie import init_beanie
 from app.core.config import settings, configure_cloudinary
 # from app.core.db.database import get_database
@@ -31,7 +32,7 @@ async def lifespan(app: FastAPI):
     # STARTUP
     configure_cloudinary()
     print("Cloudinary Configured Successfully")
-    client = AsyncMongoClient(settings.MONGODB_URL)
+    client = AsyncMongoClient(settings.MONGODB_URL, tlsCAFile=certifi.where())
     await init_beanie(database=client[settings.DB_NAME], document_models=[
         User, UserFollows, UserBlocks, 
         Post, Media, 
