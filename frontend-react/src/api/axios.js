@@ -28,7 +28,8 @@ api.interceptors.response.use(
         const originalRequest = error.config;
 
         // If 401 Unauthorized and we haven't retried yet
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        // Skip for login endpoint to avoid loops on invalid credentials
+        if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url.includes('/login')) {
             originalRequest._retry = true;
 
             try {
@@ -51,7 +52,9 @@ api.interceptors.response.use(
                 localStorage.removeItem('access_token');
                 localStorage.removeItem('refresh_token');
                 sessionStorage.removeItem('refresh_token');
-                window.location.href = '/login';
+                if (window.location.pathname !== '/login') {
+                    window.location.href = '/login';
+                }
                 return Promise.reject(refreshError);
             }
         }

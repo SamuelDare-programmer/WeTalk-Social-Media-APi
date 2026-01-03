@@ -64,16 +64,17 @@ const ShortCard = ({ post, isActive, onComment }) => {
 
     const media = post.media?.[0];
     const url = media?.view_link || media?.url;
+    // Optimization: Use image for background to reduce resource usage and avoid cache errors
+    const thumbnailUrl = url ? url.replace(/\.[^/.]+$/, ".jpg") : null;
 
     return (
         <div className="relative h-full w-full bg-slate-900 snap-start flex items-center justify-center overflow-hidden">
             {/* Blurred Background for immersion */}
             <div className="absolute inset-0 z-0">
-                <video
-                    src={url}
+                <img
+                    src={thumbnailUrl}
                     className="h-full w-full object-cover blur-3xl opacity-50 scale-110"
-                    muted
-                    playsInline
+                    alt=""
                 />
             </div>
 
@@ -85,6 +86,7 @@ const ShortCard = ({ post, isActive, onComment }) => {
                 playsInline
                 muted={isMuted}
                 onClick={handleLike} // Double tap could be implemented here too
+                crossOrigin="anonymous"
             />
 
             {/* Overlay */}
