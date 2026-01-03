@@ -13,6 +13,12 @@ const StoryViewer = ({ storyGroups, initialGroupIndex = 0, onClose }) => {
     const currentGroup = storyGroups[groupIndex];
     const currentStory = currentGroup.stories[storyIndex];
 
+    // Helper to get video URL from thumbnail URL (replaces .jpg with .mp4)
+    const getVideoUrl = (url) => {
+        if (!url) return '';
+        return url.replace(/\.(jpg|jpeg|png|webp)$/i, '.mp4');
+    };
+
     const nextStory = useCallback(() => {
         if (storyIndex < currentGroup.stories.length - 1) {
             setStoryIndex(prev => prev + 1);
@@ -38,7 +44,9 @@ const StoryViewer = ({ storyGroups, initialGroupIndex = 0, onClose }) => {
     }, [storyIndex, groupIndex, storyGroups]);
 
     useEffect(() => {
-        const duration = currentStory.media_type?.startsWith('video') ? 10000 : 5000;
+        if (currentStory.media_type?.startsWith('video')) return;
+
+        const duration = 10000;
         const interval = 50;
         const step = (interval / duration) * 100;
 
@@ -75,7 +83,7 @@ const StoryViewer = ({ storyGroups, initialGroupIndex = 0, onClose }) => {
                 >
                     {/* Blurred Background for Stories */}
                     <div className="absolute inset-0 z-0">
-                        {currentStory.media_type?.startsWith('video') ? (
+                        {currentStory.media_type?.startsWith('video') && currentStory.media_url.match(/\.(mp4|mov|webm)$/i) ? (
                             <video src={currentStory.media_url} className="w-full h-full object-cover blur-2xl opacity-40 scale-110" muted playsInline />
                         ) : (
                             <img src={currentStory.media_url} alt="" className="w-full h-full object-cover blur-2xl opacity-40 scale-110" />
@@ -85,11 +93,17 @@ const StoryViewer = ({ storyGroups, initialGroupIndex = 0, onClose }) => {
                     {/* Media */}
                     {currentStory.media_type?.startsWith('video') ? (
                         <video
-                            src={currentStory.media_url}
+                            src={getVideoUrl(currentStory.media_url)}
                             className="relative z-10 w-full h-full object-contain"
                             autoPlay
                             muted={isMuted}
                             playsInline
+                            onTimeUpdate={(e) => {
+                                if (e.target.duration > 0) {
+                                    setProgress((e.target.currentTime / e.target.duration) * 100);
+                                }
+                            }}
+                            onEnded={nextStory}
                         />
                     ) : (
                         <img

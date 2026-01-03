@@ -26,20 +26,26 @@ const Home = () => {
         try {
             const currentOffset = isInitial ? 0 : offset;
             const res = await axios.get(`/posts/?limit=10&offset=${currentOffset}`);
-            const newPosts = res.data;
+            const fetchedPosts = res.data;
+
+            // Filter out posts that have media but no view_link/url (still processing)
+            const validPosts = fetchedPosts.filter(post => {
+                if (!post.media || post.media.length === 0) return true;
+                return post.media.every(m => m.url || m.view_link);
+            });
 
             if (isInitial) {
-                setPosts(newPosts);
+                setPosts(validPosts);
             } else {
                 setPosts(prev => {
                     const existingIds = new Set(prev.map(p => p.id));
-                    const uniqueNewPosts = newPosts.filter(p => !existingIds.has(p.id));
+                    const uniqueNewPosts = validPosts.filter(p => !existingIds.has(p.id));
                     return [...prev, ...uniqueNewPosts];
                 });
             }
 
-            setHasMore(newPosts.length === 10);
-            setOffset(currentOffset + newPosts.length);
+            setHasMore(fetchedPosts.length === 10);
+            setOffset(currentOffset + fetchedPosts.length);
         } catch (err) {
             console.error('Failed to fetch posts', err);
         } finally {
@@ -52,8 +58,23 @@ const Home = () => {
     }, []);
 
     const handleStoryClick = async (groups, index) => {
-        setActiveStoryGroups(groups);
-        setInitialStoryIndex(index);
+        // Filter out stories that don't have a valid media URL yet (e.g., processing videos)
+        const sanitizedGroups = groups.map(group => ({
+            ...group,
+            stories: group.stories.filter(story =>
+                (story.media && (story.media.view_link || story.media.url)) || story.media_url
+            )
+        })).filter(group => group.stories.length > 0);
+
+        const clickedGroup = groups[index];
+        const newIndex = sanitizedGroups.findIndex(g =>
+            (g.user?.id || g.user?._id) === (clickedGroup?.user?.id || clickedGroup?.user?._id)
+        );
+
+        if (newIndex !== -1) {
+            setActiveStoryGroups(sanitizedGroups);
+            setInitialStoryIndex(newIndex);
+        }
     };
 
     if (loading && posts.length === 0) {
@@ -138,7 +159,7 @@ const Home = () => {
                             <a key={link} href="#" className="hover:underline">{link}</a>
                         ))}
                     </div>
-                    <p className="text-[11px] text-text-secondary/60 mt-6 uppercase font-black">© 2025 WETALK FROM PIXSELLS</p>
+                    <p className="text-[11px] text-text-secondary/60 mt-6 uppercase font-black">© 2025 WETALK FROM DARE</p>
                 </div>
             </aside>
 

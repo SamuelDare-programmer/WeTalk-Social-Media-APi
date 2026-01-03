@@ -10,6 +10,7 @@ from pymongo import AsyncMongoClient
 import time
 from beanie import init_beanie, PydanticObjectId
 from app.core.config import settings, configure_cloudinary
+import certifi
 from app.posts.models import Media, MediaStatus, MediaType
 from app.stories.models import Story, StoryView
 from datetime import datetime, timezone
@@ -20,7 +21,12 @@ c_app.config_from_object("app.core.config")
 
 async def _update_media_status(media_id: str, public_id: str, view_link: str):
     """Helper to update Beanie document from sync Celery task"""
-    client = AsyncMongoClient(settings.MONGODB_URL)
+    mongo_options = {}
+    if settings.VALIDATE_CERTS and "localhost" not in settings.MONGODB_URL and "127.0.0.1" not in settings.MONGODB_URL:
+        mongo_options["tlsCAFile"] = certifi.where()
+        mongo_options["tls"] = True
+        
+    client = AsyncMongoClient(settings.MONGODB_URL, **mongo_options)
     await init_beanie(database=client[settings.DB_NAME], document_models=[Media])
     
     media = await Media.get(PydanticObjectId(media_id))
@@ -53,9 +59,11 @@ def upload_video_task(media_id: str, file_path: str):
         )
         
         video_url = result.get("secure_url")
+        # Use thumbnail URL for view_link so StoryTray displays an image
+        thumbnail_url = video_url.rsplit('.', 1)[0] + '.jpg'
         
         # Update the pre-created media record
-        asyncio.run(_update_media_status(media_id, result.get("public_id"), video_url))
+        asyncio.run(_update_media_status(media_id, result.get("public_id"), thumbnail_url))
         
         print(f"Background upload complete: {video_url}")
         
@@ -101,7 +109,12 @@ def cleanup_expired_stories():
     async_to_sync(_cleanup_expired_stories_async)()
 
 async def _cleanup_expired_stories_async():
-    client = AsyncMongoClient(settings.MONGODB_URL)
+    mongo_options = {}
+    if settings.VALIDATE_CERTS and "localhost" not in settings.MONGODB_URL and "127.0.0.1" not in settings.MONGODB_URL:
+        mongo_options["tlsCAFile"] = certifi.where()
+        mongo_options["tls"] = True
+        
+    client = AsyncMongoClient(settings.MONGODB_URL, **mongo_options)
     try:
         await init_beanie(database=client[settings.DB_NAME], document_models=[Media, Story, StoryView])
         

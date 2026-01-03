@@ -32,7 +32,12 @@ async def lifespan(app: FastAPI):
     # STARTUP
     configure_cloudinary()
     print("Cloudinary Configured Successfully")
-    client = AsyncMongoClient(settings.MONGODB_URL, tlsCAFile=certifi.where())
+    
+    mongo_options = {}
+    if settings.VALIDATE_CERTS and "localhost" not in settings.MONGODB_URL and "127.0.0.1" not in settings.MONGODB_URL:
+        mongo_options["tlsCAFile"] = certifi.where()
+        mongo_options["tls"] = True
+    client = AsyncMongoClient(settings.MONGODB_URL, **mongo_options)
     await init_beanie(database=client[settings.DB_NAME], document_models=[
         User, UserFollows, UserBlocks, 
         Post, Media, 

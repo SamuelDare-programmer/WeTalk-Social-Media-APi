@@ -65,7 +65,9 @@ class MediaService:
             await new_media.save()
 
             # 2. Queue task with the new media_id
-            upload_video_task.delay(media_id=str(new_media.id), file_path=file_path)
+            print(f"Queuing video upload task for media_id: {new_media.id}")
+            task = upload_video_task.delay(media_id=str(new_media.id), file_path=file_path)
+            print(f"Task queued successfully: {task.id}")
             
             return {
                 "message": "Video processing has been queued.",

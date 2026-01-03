@@ -8,6 +8,7 @@ const EditProfile = () => {
     const navigate = useNavigate();
     const { user } = useAuth();
     const [formData, setFormData] = useState({
+        username: '',
         email: '',
         first_name: '',
         middle_name: '',
@@ -26,6 +27,7 @@ const EditProfile = () => {
             try {
                 const res = await axios.get('/auth/users/me');
                 setFormData({
+                    username: res.data.username || '',
                     email: res.data.email || '',
                     first_name: res.data.first_name || '',
                     middle_name: res.data.middle_name || '',
@@ -119,6 +121,16 @@ const EditProfile = () => {
                             </label>
                         </div>
                         <p className="text-xs text-slate-500 mt-2">Tap to change profile photo</p>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Username</label>
+                        <input
+                            type="text"
+                            value={formData.username}
+                            disabled
+                            className="w-full px-4 py-3 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-border-dark text-slate-500 dark:text-slate-400 cursor-not-allowed"
+                        />
                     </div>
 
                     <div className="space-y-2">
