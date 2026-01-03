@@ -11,7 +11,6 @@ from app.core.errors import register_exceptions
 from app.core.db.models import User, UserFollows, UserBlocks
 from app.posts.models import Post, Media
 from app.engagement.models import PostLike, Comment, Bookmark, CommentLike
-from fastapi.middleware.cors import CORSMiddleware
 from app.feed.routes import router as feed_router
 from app.following.routes import router as following_router
 from app.engagement.routes import router as engagement_router
@@ -23,6 +22,7 @@ from app.messenger.models import Conversation, Message
 from app.messenger.routes import router as messenger_router
 from app.notification.routes import router as notifications_router
 from app.notification.models import Notification
+from app.middleware import register_middleware
 # from app.main import router as main_router
 
 version = "v1"
@@ -55,6 +55,7 @@ app = FastAPI(
 )
 
 register_exceptions(app)
+register_middleware(app)
 
 @app.get("/health")
 async def health_check():
@@ -63,14 +64,6 @@ async def health_check():
         return {"status": "ok"}
     except Exception as e:
         return {"status": "error", "details": str(e)}
-    
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
     
 app.include_router(
     prefix=f"/api/{version}", router=auth_router)
