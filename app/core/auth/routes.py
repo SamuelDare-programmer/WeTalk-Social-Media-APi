@@ -59,9 +59,8 @@ async def delete_user(current_user = Depends(get_current_user)):
 @router.get("/verify/{token:str}")
 async def verify_email(token: str):
     await user_service.verify_user_email(token)
-    return JSONResponse(content={
-        "message": "Email verified successfully. You can now log in."
-    })
+    domain_name = settings.FRONTEND_DOMAIN_NAME
+    return RedirectResponse(url=f"https://{domain_name}/login?verified=true")
 
 @router.post("/password_reset")
 async def request_password_reset(email: str):
