@@ -3,7 +3,7 @@ FROM python:3.11-slim
 WORKDIR /code
 
 # Create a non-root user
-RUN addgroup --system appgroup && adduser --system --group appgroup appuser
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
 
     # Install system dependencies for SSL
 RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
