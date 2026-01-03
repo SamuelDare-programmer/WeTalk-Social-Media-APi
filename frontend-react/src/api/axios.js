@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: 'https://considerable-cathrin-wetalk-0d4f7320.koyeb.app/',
+    baseURL: 'https://considerable-cathrin-wetalk-0d4f7320.koyeb.app/api/v1/',
     headers: {
         'Content-Type': 'application/json',
     },
