@@ -1,22 +1,17 @@
 import axios from 'axios';
 
-const api = axios.create({
-    baseURL: 'https://considerable-cathrin-wetalk-0d4f7320.koyeb.app/api/v1/',
+// Default to localhost for development, or use environment variable
+const BASE_URL = 'http://localhost:8000/api/v1';
+
+const instance = axios.create({
+    baseURL: BASE_URL,
     headers: {
         'Content-Type': 'application/json',
     },
 });
 
-api.interceptors.request.use((config) => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-});
-
 // Request Interceptor: Attach Access Token
-api.interceptors.request.use(
+instance.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('access_token');
         if (token) {
@@ -28,7 +23,7 @@ api.interceptors.request.use(
 );
 
 // Response Interceptor: Handle 401 & Refresh Token
-api.interceptors.response.use(
+instance.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
@@ -51,7 +46,7 @@ api.interceptors.response.use(
 
                 // Update header and retry original request
                 originalRequest.headers['Authorization'] = `Bearer ${access_token}`;
-                return api(originalRequest);
+                return instance(originalRequest);
             } catch (refreshError) {
                 // Refresh failed - clear tokens and redirect to login
                 localStorage.removeItem('access_token');
@@ -65,4 +60,4 @@ api.interceptors.response.use(
     }
 );
 
-export default api;
+export default instance;

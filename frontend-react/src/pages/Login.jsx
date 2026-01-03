@@ -46,6 +46,7 @@ const Login = () => {
                         localStorage.removeItem('refresh_token');
                     }
                 }
+                localStorage.setItem('access_token', access_token);
                 await login(access_token);
                 navigate('/');
             }

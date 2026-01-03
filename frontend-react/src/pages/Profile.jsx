@@ -294,7 +294,7 @@ const Profile = () => {
                     <>
                         {posts.map((post) => (
                             <PostCard
-                                key={post.id}
+                                key={post.id || post._id}
                                 post={post}
                                 onComment={() => setSelectedPost(post)}
                                 onDelete={handleDeletePost}
@@ -336,7 +336,7 @@ const Profile = () => {
                     <>
                         {likedPosts.map((post) => (
                             <PostCard
-                                key={post.id}
+                                key={post.id || post._id}
                                 post={post}
                                 onComment={() => setSelectedPost(post)}
                             />
@@ -354,7 +354,7 @@ const Profile = () => {
                     <>
                         {savedPosts.map((post) => (
                             <PostCard
-                                key={post.id}
+                                key={post.id || post._id}
                                 post={post}
                                 onComment={() => setSelectedPost(post)}
                             />

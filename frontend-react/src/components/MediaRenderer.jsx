@@ -15,6 +15,16 @@ const MediaRenderer = ({ media, postId, onDoubleTap }) => {
     const [isPlaying, setIsPlaying] = useState(false);
     const videoRef = useRef(null);
 
+    const getVideoUrl = (mediaItem) => {
+        const rawUrl = mediaItem.view_link || mediaItem.url;
+        if (!rawUrl) return '';
+        // If it's a video, ensure we have the video file extension
+        if (mediaItem.media_type?.startsWith('video')) {
+            return rawUrl.replace(/\.(jpg|jpeg|png|webp)$/i, '.mp4');
+        }
+        return rawUrl;
+    };
+
     if (!media || media.length === 0) return null;
 
     const isCarousel = media.length > 1;
@@ -47,8 +57,8 @@ const MediaRenderer = ({ media, postId, onDoubleTap }) => {
     };
 
     const currentMedia = media[currentIndex];
-    const url = currentMedia.view_link || currentMedia.url;
-    const isVideo = currentMedia.media_type?.startsWith('video') || url.match(/\.(mp4|webm|ogg|mov)$/i);
+    const isVideo = currentMedia.media_type?.startsWith('video');
+    const displayUrl = getVideoUrl(currentMedia);
 
     useEffect(() => {
         if (isVideo && videoRef.current) {
@@ -71,7 +81,7 @@ const MediaRenderer = ({ media, postId, onDoubleTap }) => {
                 <div className="relative w-full h-full flex items-center justify-center" onClick={togglePlay} onDoubleClick={() => onDoubleTap?.()}>
                     <video
                         ref={videoRef}
-                        src={url}
+                        src={displayUrl}
                         className="w-full h-full object-contain"
                         loop
                         playsInline
@@ -99,7 +109,7 @@ const MediaRenderer = ({ media, postId, onDoubleTap }) => {
                 </div>
             ) : (
                 <div className="relative w-full h-full" onDoubleClick={() => onDoubleTap?.()}>
-                    <img src={url} alt="Post content" className="w-full h-full object-contain" />
+                    <img src={displayUrl} alt="Post content" className="w-full h-full object-contain" />
                 </div>
             )}
 
