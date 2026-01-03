@@ -43,17 +43,17 @@ class Settings(BaseSettings):
     @property
     def redis_url(self) -> str:
         """Redis URL for async redis client"""
-        return f"redis://{self.REDIS_USERNAME}:{self.REDIS_PASSWORD}@{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
+        return f"rediss://{self.REDIS_USERNAME}:{self.REDIS_PASSWORD}@{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}?ssl_cert_reqs=none"
     
     @property
     def celery_broker_url(self) -> str:
         """Celery broker URL (Redis)"""
-        return f"redis://{self.REDIS_USERNAME}:{self.REDIS_PASSWORD}@{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
+        return f"rediss://{self.REDIS_USERNAME}:{self.REDIS_PASSWORD}@{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}?ssl_cert_reqs=none"
     
     @property
     def celery_result_backend(self) -> str:
         """Celery result backend URL (Redis)"""
-        return f"redis://{self.REDIS_USERNAME}:{self.REDIS_PASSWORD}@{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
+        return f"rediss://{self.REDIS_USERNAME}:{self.REDIS_PASSWORD}@{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}?ssl_cert_reqs=none"
 
 settings = Settings()
 
@@ -94,6 +94,7 @@ worker_max_tasks_per_child = 1000
 broker_connection_retry_on_startup = True
 broker_connection_retry = True
 broker_connection_max_retries = 10
+broker_pool_limit = 1  # Limit connection pool for serverless Redis
 
 # Beat Schedule
 beat_schedule = {
