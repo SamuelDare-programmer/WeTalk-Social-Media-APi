@@ -22,7 +22,7 @@ from app.messenger.models import Conversation, Message
 from app.messenger.routes import router as messenger_router
 from app.notification.routes import router as notifications_router
 from app.notification.models import Notification
-from app.middleware import register_middleware
+from app.core.middleware import register_middleware
 # from app.main import router as main_router
 
 version = "v1"
