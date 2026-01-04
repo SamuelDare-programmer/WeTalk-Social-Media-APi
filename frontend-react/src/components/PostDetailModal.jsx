@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Heart, MessageCircle, Share2, Bookmark, Send, MoreHorizontal, Maximize2, ChevronLeft, Volume2, VolumeX } from 'lucide-react';
+import { X, Heart, MessageCircle, Share2, Bookmark, Send, MoreHorizontal, Maximize2, ChevronLeft, ChevronRight, Volume2, VolumeX } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from '../api/axios';
 import { useAuth } from '../context/AuthContext';
@@ -17,6 +17,7 @@ const PostDetailModal = ({ post, onClose, onLike, onBookmark }) => {
     const [likesCount, setLikesCount] = useState(post.likes_count || 0);
     const [isBookmarked, setIsBookmarked] = useState(post.is_bookmarked);
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [activeIndex, setActiveIndex] = useState(0);
 
     const postId = post.id || post._id;
     const author = post.author || post.user || {};
@@ -140,7 +141,14 @@ const PostDetailModal = ({ post, onClose, onLike, onBookmark }) => {
                             </div>
                         ) : (
                             <>
-                                <MediaRenderer media={post.media} postId={postId} showImmersiveIcon={false} forcePause={isFullscreen} />
+                                <MediaRenderer
+                                    media={post.media}
+                                    postId={postId}
+                                    showImmersiveIcon={false}
+                                    forcePause={isFullscreen}
+                                    initialIndex={activeIndex}
+                                    onIndexChange={setActiveIndex}
+                                />
                                 <button
                                     onClick={() => setIsFullscreen(true)}
                                     className="absolute bottom-4 right-4 z-20 p-3 bg-black/40 backdrop-blur-md rounded-xl text-white opacity-0 group-hover:opacity-100 transition-all hover:bg-black/60 border border-white/10"
@@ -297,23 +305,76 @@ const PostDetailModal = ({ post, onClose, onLike, onBookmark }) => {
                         </div>
 
                         {/* Main Media - Full Screen Focus */}
-                        <div className="relative z-10 w-full h-full flex items-center justify-center">
-                            <div className="w-full h-full p-2 md:p-8">
-                                {post.media?.[0]?.media_type?.startsWith('video') ? (
+                        <div className="relative z-10 w-full h-full flex items-center justify-center select-none overflow-hidden pb-4">
+                            {post.media?.length > 1 && (
+                                <button
+                                    onClick={() => setActiveIndex((prev) => (prev - 1 + post.media.length) % post.media.length)}
+                                    className="absolute left-6 z-30 p-4 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all border border-white/10 active:scale-90 hidden md:flex"
+                                >
+                                    <ChevronLeft className="size-8" />
+                                </button>
+                            )}
+
+                            <motion.div
+                                drag="x"
+                                dragConstraints={{ left: 0, right: 0 }}
+                                dragElastic={0.2}
+                                onDragEnd={(e, { offset, velocity }) => {
+                                    const swipe = offset.x;
+                                    if (swipe < -100) {
+                                        setActiveIndex((prev) => (prev + 1) % post.media.length);
+                                    } else if (swipe > 100) {
+                                        setActiveIndex((prev) => (prev - 1 + post.media.length) % post.media.length);
+                                    }
+                                }}
+                                className="w-full h-full flex items-center justify-center p-2 md:p-8 cursor-grab active:cursor-grabbing"
+                            >
+                                {post.media?.[activeIndex]?.media_type?.startsWith('video') ? (
                                     <video
+                                        key={`full-${postId}-${activeIndex}`}
                                         controls
                                         autoPlay
                                         name="media"
-                                        className="w-full h-full object-contain"
-                                        src={getVideoUrl(post.media[0].view_link || post.media[0].url)}
+                                        className="w-full h-full object-contain pointer-events-auto"
+                                        src={getVideoUrl(post.media[activeIndex].view_link || post.media[activeIndex].url)}
                                         muted={isMuted}
+                                        playsInline
                                     >
-                                        <source src={getVideoUrl(post.media[0].view_link || post.media[0].url)} type="video/mp4" />
+                                        <source src={getVideoUrl(post.media[activeIndex].view_link || post.media[activeIndex].url)} type="video/mp4" />
                                     </video>
                                 ) : (
-                                    <MediaRenderer media={post.media} postId={postId} showImmersiveIcon={false} />
+                                    <div className="w-full h-full flex items-center justify-center pointer-events-none">
+                                        <img
+                                            key={`full-${postId}-${activeIndex}`}
+                                            src={post.media?.[activeIndex]?.view_link || post.media?.[activeIndex]?.url}
+                                            alt="Immersive content"
+                                            className="max-w-full max-h-full object-contain shadow-2xl rounded-sm"
+                                            draggable="false"
+                                        />
+                                    </div>
                                 )}
-                            </div>
+                            </motion.div>
+
+                            {post.media?.length > 1 && (
+                                <button
+                                    onClick={() => setActiveIndex((prev) => (prev + 1) % post.media.length)}
+                                    className="absolute right-6 z-30 p-4 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all border border-white/10 active:scale-90 hidden md:flex"
+                                >
+                                    <ChevronRight className="size-8" />
+                                </button>
+                            )}
+
+                            {/* Mobile Swipe Indicators */}
+                            {post.media?.length > 1 && (
+                                <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-2 z-30">
+                                    {post.media.map((_, i) => (
+                                        <div
+                                            key={i}
+                                            className={`size-1.5 rounded-full transition-all ${i === activeIndex ? 'bg-white w-4' : 'bg-white/30'}`}
+                                        />
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </motion.div>
                 )}

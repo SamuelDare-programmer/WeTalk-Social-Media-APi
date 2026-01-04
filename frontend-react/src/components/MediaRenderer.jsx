@@ -9,9 +9,9 @@ function cn(...inputs) {
     return twMerge(clsx(inputs));
 }
 
-const MediaRenderer = ({ media, postId, onDoubleTap, onClick, showImmersiveIcon = true, forcePause = false }) => {
+const MediaRenderer = ({ media, postId, onDoubleTap, onClick, showImmersiveIcon = true, forcePause = false, initialIndex = 0, onIndexChange }) => {
     const { isMuted, toggleMute, activeVideoId, playVideo } = useVideo();
-    const [currentIndex, setCurrentIndex] = useState(0);
+    const [currentIndex, setCurrentIndex] = useState(initialIndex);
     const [isPlaying, setIsPlaying] = useState(false);
     const videoRef = useRef(null);
 
@@ -31,12 +31,16 @@ const MediaRenderer = ({ media, postId, onDoubleTap, onClick, showImmersiveIcon 
 
     const handleNext = (e) => {
         e.stopPropagation();
-        setCurrentIndex((prev) => (prev + 1) % media.length);
+        const next = (currentIndex + 1) % media.length;
+        setCurrentIndex(next);
+        onIndexChange?.(next);
     };
 
     const handlePrev = (e) => {
         e.stopPropagation();
-        setCurrentIndex((prev) => (prev - 1 + media.length) % media.length);
+        const next = (currentIndex - 1 + media.length) % media.length;
+        setCurrentIndex(next);
+        onIndexChange?.(next);
     };
 
     const togglePlay = (e) => {
@@ -56,6 +60,10 @@ const MediaRenderer = ({ media, postId, onDoubleTap, onClick, showImmersiveIcon 
         toggleMute();
     };
 
+    useEffect(() => {
+        setCurrentIndex(initialIndex);
+    }, [initialIndex]);
+
     const currentMedia = media[currentIndex];
     const isVideo = currentMedia.media_type?.startsWith('video');
     const displayUrl = getVideoUrl(currentMedia);
@@ -65,6 +73,23 @@ const MediaRenderer = ({ media, postId, onDoubleTap, onClick, showImmersiveIcon 
             videoRef.current.muted = isMuted;
         }
     }, [isMuted, isVideo]);
+
+    useEffect(() => {
+        if (isVideo && videoRef.current) {
+            const observer = new IntersectionObserver(
+                ([entry]) => {
+                    if (!entry.isIntersecting && isPlaying) {
+                        videoRef.current.pause();
+                        setIsPlaying(false);
+                    }
+                },
+                { threshold: 0.5 } // 50% visibility threshold
+            );
+
+            observer.observe(videoRef.current);
+            return () => observer.disconnect();
+        }
+    }, [isVideo, isPlaying]);
 
     useEffect(() => {
         if (isVideo && videoRef.current) {
