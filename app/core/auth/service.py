@@ -47,8 +47,11 @@ class UserService:
         return user 
     
     async def get_user_by_id(self, user_id: str):
-        user = await User.get(user_id)
-        return user
+        try:
+            user = await User.get(user_id)
+            return user
+        except Exception:
+            return None
     
     async def authenticate_user(self, identifier: str, password: str) -> dict:
         # 1. Find User
