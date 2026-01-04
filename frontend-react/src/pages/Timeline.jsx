@@ -105,6 +105,7 @@ const Timeline = () => {
                                     <PostCard
                                         post={post}
                                         onComment={() => setSelectedPost(post)}
+                                        onMediaClick={setSelectedPost}
                                     />
                                 </div>
                             );
@@ -114,6 +115,7 @@ const Timeline = () => {
                                     key={post.id || post._id}
                                     post={post}
                                     onComment={() => setSelectedPost(post)}
+                                    onMediaClick={setSelectedPost}
                                 />
                             );
                         }

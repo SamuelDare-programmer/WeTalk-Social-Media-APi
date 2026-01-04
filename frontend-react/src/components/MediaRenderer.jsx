@@ -9,7 +9,7 @@ function cn(...inputs) {
     return twMerge(clsx(inputs));
 }
 
-const MediaRenderer = ({ media, postId, onDoubleTap }) => {
+const MediaRenderer = ({ media, postId, onDoubleTap, onClick }) => {
     const { isMuted, toggleMute, activeVideoId, playVideo } = useVideo();
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -76,7 +76,10 @@ const MediaRenderer = ({ media, postId, onDoubleTap }) => {
     }, [activeVideoId, postId, isPlaying, isVideo]);
 
     return (
-        <div className="relative group rounded-xl overflow-hidden bg-black aspect-square max-h-[600px] flex items-center justify-center">
+        <div
+            className="relative group rounded-xl overflow-hidden bg-black aspect-square max-h-[600px] flex items-center justify-center cursor-pointer"
+            onClick={onClick}
+        >
             {isVideo ? (
                 <div className="relative w-full h-full flex items-center justify-center" onClick={togglePlay} onDoubleClick={() => onDoubleTap?.()}>
                     <video
@@ -118,19 +121,19 @@ const MediaRenderer = ({ media, postId, onDoubleTap }) => {
                 <>
                     <button
                         onClick={handlePrev}
-                        className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-black/40 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/60"
+                        className="absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/60 z-20"
                     >
-                        <ChevronLeft className="size-6" />
+                        <ChevronLeft className="size-5 sm:size-6" />
                     </button>
                     <button
                         onClick={handleNext}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-black/40 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/60"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/60 z-20"
                     >
-                        <ChevronRight className="size-6" />
+                        <ChevronRight className="size-5 sm:size-6" />
                     </button>
 
                     {/* Dots */}
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 px-2 py-1 rounded-full bg-black/20 backdrop-blur-md">
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 px-2 py-1 rounded-full bg-black/20 backdrop-blur-md z-20">
                         {media.map((_, idx) => (
                             <div
                                 key={idx}
@@ -143,11 +146,18 @@ const MediaRenderer = ({ media, postId, onDoubleTap }) => {
                     </div>
 
                     {/* Index Badge */}
-                    <div className="absolute top-4 right-4 px-2 py-1 rounded-full bg-black/50 backdrop-blur-md text-white text-[10px] font-bold">
+                    <div className="absolute top-4 left-4 px-2 py-1 rounded-full bg-black/50 backdrop-blur-md text-white text-[10px] font-bold z-20">
                         {currentIndex + 1} / {media.length}
                     </div>
                 </>
             )}
+
+            {/* Immersive Icon (Maximize) */}
+            <div className="absolute top-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="p-2 rounded-lg bg-black/40 backdrop-blur-md text-white border border-white/10">
+                    <Maximize2 className="size-4 sm:size-5" />
+                </div>
+            </div>
         </div>
     );
 };

@@ -7,7 +7,7 @@ import axios from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const PostCard = ({ post, onLike, onComment, onShare, onBookmark, onDelete }) => {
+const PostCard = ({ post, onLike, onComment, onShare, onBookmark, onDelete, onMediaClick }) => {
     const navigate = useNavigate();
     const { user } = useAuth();
     const [isLiked, setIsLiked] = useState(post.is_liked);
@@ -97,23 +97,22 @@ const PostCard = ({ post, onLike, onComment, onShare, onBookmark, onDelete }) =>
     };
 
     return (
-        <article className="bg-white dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-border-dark p-4 shadow-sm group transition-all hover:shadow-md mb-4">
-            <div className="flex gap-3">
-                {/* Author Avatar */}
-                <div className="size-10 rounded-full border border-slate-100 dark:border-border-dark cursor-pointer overflow-hidden shrink-0" onClick={() => navigate?.(`/profile/${author.username}`)}>
+        <article className="bg-white dark:bg-surface-dark sm:rounded-2xl border-y sm:border border-slate-200 dark:border-border-dark shadow-sm group transition-all hover:shadow-md mb-2 sm:mb-4 overflow-hidden">
+            {/* Header: Avatar + Info */}
+            <div className="flex items-center gap-3 p-3 sm:p-4 pb-1">
+                <div className="size-9 sm:size-10 rounded-full border border-slate-100 dark:border-border-dark cursor-pointer overflow-hidden shrink-0" onClick={() => navigate?.(`/profile/${author.username}`)}>
                     <img src={authorAvatar} alt={author.username} className="w-full h-full object-cover" />
                 </div>
-
                 <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-start">
+                    <div className="flex justify-between items-center">
                         <div>
                             <h4 className="font-bold text-slate-900 dark:text-white text-sm hover:underline cursor-pointer" onClick={() => navigate?.(`/profile/${author.username}`)}>
                                 {authorName}
                             </h4>
-                            <p className="text-xs text-text-secondary">@{author.username}</p>
+                            <p className="text-[11px] sm:text-xs text-text-secondary">@{author.username} • {getTimeAgo(post.created_at)}</p>
                             {post.location && (
                                 <div
-                                    className="flex items-center gap-1 text-xs text-primary mt-0.5 cursor-pointer hover:underline"
+                                    className="flex items-center gap-1 text-[11px] sm:text-xs text-primary mt-0.5 cursor-pointer hover:underline"
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         navigate?.(`/explore?query=${post.location._id || post.location.id}&type=location`);
@@ -125,85 +124,91 @@ const PostCard = ({ post, onLike, onComment, onShare, onBookmark, onDelete }) =>
                             )}
                         </div>
                         <div className="flex items-center gap-2">
-                            <span className="text-xs text-text-secondary">{getTimeAgo(post.created_at)}</span>
                             {isOwner ? (
                                 <button
                                     onClick={handleDeleteClick}
-                                    className="text-text-secondary hover:text-red-500 transition-colors"
+                                    className="p-2 text-text-secondary hover:text-red-500 transition-colors"
                                     title="Delete Post"
                                 >
                                     <Trash2 className="size-4" />
                                 </button>
                             ) : (
-                                <button className="text-text-secondary hover:text-slate-900 dark:hover:text-white">
+                                <button className="p-2 text-text-secondary hover:text-slate-900 dark:hover:text-white">
                                     <MoreHorizontal className="size-4" />
                                 </button>
                             )}
                         </div>
                     </div>
-
-                    {/* Caption */}
-                    <div className="text-slate-800 dark:text-gray-200 text-sm mt-2 whitespace-pre-wrap">
-                        {formatCaptionWithHashtags(post.caption || post.content).map((part) => (
-                            part.type === 'text' ? part.text :
-                                <span key={part.key} className="text-primary font-medium cursor-pointer hover:underline">
-                                    {part.text}
-                                </span>
-                        ))}
-                    </div>
-
-                    {/* Media */}
-                    <div className="relative mt-3">
-                        <MediaRenderer
-                            media={post.media}
-                            postId={post.id || post._id}
-                            onDoubleTap={handleDoubleTap}
-                        />
-
-                        {/* Heart Pop Animation */}
-                        {showHeartPop && (
-                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30 animate-in fade-in zoom-in duration-300">
-                                <Heart className="text-white fill-white size-24 drop-shadow-2xl" />
-                            </div>
-                        )}
-                    </div>
                 </div>
             </div>
 
-            {/* Interactions */}
-            <div className="flex items-center justify-between mt-4 pt-1 border-t border-slate-100 dark:border-border-dark">
-                <div className="flex items-center gap-1">
-                    <button
-                        onClick={handleLike}
-                        className={`flex items-center gap-2 p-2 rounded-xl transition-all ${isLiked ? 'text-pink-500' : 'text-slate-500 hover:text-pink-500 hover:bg-pink-50 dark:hover:bg-pink-500/10'}`}
-                    >
-                        <Heart className={`size-6 transition-transform group-active:scale-125 ${isLiked ? 'fill-current' : ''}`} />
-                        <span className="text-xs font-bold">{likesCount}</span>
-                    </button>
+            {/* Caption (Above Media) */}
+            <div className="px-3 sm:px-4 pb-3">
+                <div className="text-slate-800 dark:text-gray-100 text-[13px] sm:text-sm whitespace-pre-wrap leading-relaxed">
+                    {formatCaptionWithHashtags(post.caption || post.content).map((part) => (
+                        part.type === 'text' ? part.text :
+                            <span key={part.key} className="text-primary font-medium cursor-pointer hover:underline">
+                                {part.text}
+                            </span>
+                    ))}
+                </div>
+            </div>
 
-                    <button
-                        onClick={() => onComment?.(post.id || post._id)}
-                        className="flex items-center gap-2 p-2 rounded-xl text-slate-500 hover:text-primary hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-all"
-                    >
-                        <MessageCircle className="size-6 transition-transform group-active:scale-110" />
-                        <span className="text-xs font-bold">{post.comments_count || 0}</span>
-                    </button>
-
-                    <button
-                        onClick={handleShare}
-                        className="flex items-center gap-2 p-2 rounded-xl text-slate-500 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-500/10 transition-all"
-                    >
-                        <Repeat className="size-6 transition-transform group-active:scale-110" />
-                        <span className="text-xs font-bold">{post.share_count || 0}</span>
-                    </button>
+            {/* Media: Centered / Full Width */}
+            <div className="relative w-full bg-slate-50 dark:bg-black/20 flex justify-center border-y border-slate-100 dark:border-white/5">
+                <div className="w-full max-w-[650px]">
+                    <MediaRenderer
+                        media={post.media}
+                        postId={post.id || post._id}
+                        onDoubleTap={handleDoubleTap}
+                        onClick={() => onMediaClick?.(post)}
+                    />
                 </div>
 
-                <button
-                    onClick={handleBookmark}
-                    className={`p-2 rounded-xl transition-all ${isBookmarked ? 'text-yellow-500' : 'text-slate-500 hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-500/10'}`}
-                >
-                    <Bookmark className={`size-6 ${isBookmarked ? 'fill-current' : ''}`} />
-                </button>
+                {/* Heart Pop Animation */}
+                {showHeartPop && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30 animate-in fade-in zoom-in duration-300">
+                        <Heart className="text-white fill-white size-24 drop-shadow-2xl opacity-80" />
+                    </div>
+                )}
+            </div>
+
+            {/* Interactions */}
+            <div className="px-3 sm:px-4 py-2 sm:py-3">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1 sm:gap-2">
+                        <button
+                            onClick={handleLike}
+                            className={`flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded-xl transition-all ${isLiked ? 'text-pink-500' : 'text-slate-500 hover:text-pink-500 hover:bg-pink-50 dark:hover:bg-pink-500/10'}`}
+                        >
+                            <Heart className={`size-5 sm:size-6 transition-transform group-active:scale-125 ${isLiked ? 'fill-current' : ''}`} />
+                            <span className="text-[11px] sm:text-xs font-bold">{likesCount}</span>
+                        </button>
+
+                        <button
+                            onClick={() => onComment?.(post.id || post._id)}
+                            className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded-xl text-slate-500 hover:text-primary hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-all"
+                        >
+                            <MessageCircle className="size-5 sm:size-6 transition-transform group-active:scale-110" />
+                            <span className="text-[11px] sm:text-xs font-bold">{post.comments_count || 0}</span>
+                        </button>
+
+                        <button
+                            onClick={handleShare}
+                            className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded-xl text-slate-500 hover:text-green-500 hover:bg-green-50 dark:hover:bg-green-500/10 transition-all"
+                        >
+                            <Repeat className="size-5 sm:size-6 transition-transform group-active:scale-110" />
+                            <span className="text-[11px] sm:text-xs font-bold">{post.share_count || 0}</span>
+                        </button>
+                    </div>
+
+                    <button
+                        onClick={handleBookmark}
+                        className={`p-2 rounded-xl transition-all ${isBookmarked ? 'text-yellow-500' : 'text-slate-500 hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-500/10'}`}
+                    >
+                        <Bookmark className={`size-6 ${isBookmarked ? 'fill-current' : ''}`} />
+                    </button>
+                </div>
             </div>
 
             {/* Delete Confirmation Modal */}

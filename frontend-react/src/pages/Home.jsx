@@ -112,6 +112,7 @@ const Home = () => {
                             key={post.id || post._id}
                             post={post}
                             onComment={() => setSelectedPost(post)}
+                            onMediaClick={setSelectedPost}
                         />
                     ))}
                 </div>

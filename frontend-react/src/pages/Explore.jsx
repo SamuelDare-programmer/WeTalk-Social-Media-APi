@@ -144,7 +144,7 @@ const Explore = () => {
                 </div>
             ) : (
                 // Standard Grid View
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-1 md:gap-4">
+                <div className="grid grid-cols-3 gap-0.5 sm:gap-4 px-0.5 sm:px-0">
                     {posts.map((post, idx) => {
                         const postId = post.id || post._id;
                         const isLarge = idx % 10 === 0 || idx % 10 === 6;
@@ -155,8 +155,8 @@ const Explore = () => {
                         return (
                             <div
                                 key={postId}
-                                className={`relative group overflow-hidden cursor-pointer rounded-xl transition-all hover:z-10 ${isLarge ? 'md:row-span-2 md:col-span-1' : ''
-                                    } ${!url ? 'aspect-square bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500' : 'bg-slate-100 dark:bg-white/5'}`}
+                                className={`relative group overflow-hidden cursor-pointer sm:rounded-xl transition-all hover:z-10 ${isLarge ? 'md:row-span-2 md:col-span-1' : ''
+                                    } ${!url ? 'aspect-square bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500' : 'bg-slate-100 dark:bg-white/5 shadow-sm'}`}
                                 onClick={() => setSelectedPost(post)}
                             >
                                 {url ? (

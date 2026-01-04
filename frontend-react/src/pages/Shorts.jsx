@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from '../api/axios';
-import { Heart, MessageSquare, Music2, Loader2, Volume2, VolumeX } from 'lucide-react';
+import { Heart, MessageSquare, Music2, Loader2, Volume2, VolumeX, ChevronLeft } from 'lucide-react';
 import { useVideo } from '../context/VideoContext';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -22,7 +22,20 @@ const ShortCard = ({ post, isActive, onComment }) => {
 
     useEffect(() => {
         if (isActive && videoRef.current) {
-            videoRef.current.play().catch(e => console.log("Autoplay failed", e));
+            const playPromise = videoRef.current.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    if (error.name === 'NotAllowedError') {
+                        // Fallback to muted autoplay if browser blocks unmuted
+                        if (videoRef.current) {
+                            videoRef.current.muted = true;
+                            videoRef.current.play().catch(e => console.error("Muted autoplay failed", e));
+                        }
+                    } else {
+                        console.log("Autoplay failed", error);
+                    }
+                });
+            }
             playVideo(postId);
         } else if (videoRef.current) {
             videoRef.current.pause();
@@ -62,10 +75,14 @@ const ShortCard = ({ post, isActive, onComment }) => {
         }
     };
 
-    const media = post.media?.[0];
-    const url = media?.view_link || media?.url;
-    // Optimization: Use image for background to reduce resource usage and avoid cache errors
-    const thumbnailUrl = url ? url.replace(/\.[^/.]+$/, ".jpg") : null;
+    // Ensure we select the video media if multiple exist (e.g. mixed media post)
+    const media = post.media?.find(m => m.media_type?.startsWith('video'));
+    const baseVideoUrl = media?.view_link || media?.url;
+
+    // Fix: Cloudinary might return .jpg for video URLs if they were used as thumbnails elsewhere.
+    // We force .mp4 for the video player and .jpg for the blurred background optimization.
+    const url = baseVideoUrl?.replace(/\.[^/.]+$/, ".mp4");
+    const thumbnailUrl = baseVideoUrl?.replace(/\.[^/.]+$/, ".jpg");
 
     return (
         <div className="relative h-full w-full bg-slate-900 snap-start flex items-center justify-center overflow-hidden">
@@ -78,16 +95,22 @@ const ShortCard = ({ post, isActive, onComment }) => {
                 />
             </div>
 
-            <video
-                ref={videoRef}
-                src={url}
-                className="relative z-10 max-h-full w-auto object-contain shadow-2xl"
-                loop
-                playsInline
-                muted={isMuted}
-                onClick={handleLike} // Double tap could be implemented here too
-                crossOrigin="anonymous"
-            />
+            {url ? (
+                <video
+                    ref={videoRef}
+                    src={url}
+                    className="relative z-10 max-h-full w-auto object-contain shadow-2xl"
+                    loop
+                    playsInline
+                    muted={isMuted}
+                    onClick={handleLike} // Double tap could be implemented here too
+                    crossOrigin="anonymous"
+                />
+            ) : (
+                <div className="relative z-10 flex items-center justify-center text-white/50">
+                    <p>Video unavailable</p>
+                </div>
+            )}
 
             {/* Overlay */}
             <div className="absolute inset-0 z-15 bg-black/20 pointer-events-none" />
@@ -160,6 +183,7 @@ const ShortCard = ({ post, isActive, onComment }) => {
 };
 
 const Shorts = () => {
+    const navigate = useNavigate();
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeIndex, setActiveIndex] = useState(0);
@@ -185,7 +209,10 @@ const Shorts = () => {
                 const uniquePosts = [];
                 const seenIds = new Set();
 
-                [...videoPosts].sort(() => Math.random() - 0.5).forEach(p => {
+                // Sort by date descending to show newer videos first
+                const sortedVideos = [...videoPosts].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+                sortedVideos.forEach(p => {
                     const pid = p.id || p._id;
                     if (!seenIds.has(pid)) {
                         seenIds.add(pid);
@@ -219,7 +246,14 @@ const Shorts = () => {
     }
 
     return (
-        <div className="fixed inset-0 lg:left-20 bg-black z-40 overflow-hidden">
+        <div className="fixed inset-0 lg:left-20 bg-black z-[60] overflow-hidden">
+            {/* Back Button */}
+            <button
+                onClick={() => navigate(-1)}
+                className="absolute top-6 left-6 z-[70] p-2 bg-black/40 backdrop-blur-md rounded-full text-white hover:bg-black/60 transition-all active:scale-95 flex items-center justify-center border border-white/10"
+            >
+                <ChevronLeft className="size-6" />
+            </button>
             <div
                 ref={containerRef}
                 onScroll={handleScroll}

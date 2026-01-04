@@ -68,9 +68,9 @@ const StoryViewer = ({ storyGroups, initialGroupIndex = 0, onClose }) => {
         <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4">
             <button
                 onClick={onClose}
-                className="absolute top-6 right-6 text-white/70 hover:text-white z-10 p-2"
+                className="absolute top-4 right-4 md:top-8 md:right-8 text-white/70 hover:text-white z-50 p-2 lg:p-3 bg-black/20 backdrop-blur-md rounded-full border border-white/10 transition-all active:scale-90"
             >
-                <X className="size-8" />
+                <X className="size-6 md:size-8" />
             </button>
 
             <AnimatePresence mode="wait">
@@ -79,7 +79,7 @@ const StoryViewer = ({ storyGroups, initialGroupIndex = 0, onClose }) => {
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 1.1 }}
-                    className="relative w-full max-w-[450px] h-full max-h-[calc(100vh-100px)] aspect-[9/16] bg-slate-900 rounded-3xl overflow-hidden shadow-2xl flex items-center justify-center m-auto"
+                    className="relative w-full max-w-[450px] h-full sm:h-[90vh] aspect-[9/16] bg-slate-900 sm:rounded-3xl overflow-hidden shadow-2xl flex items-center justify-center m-auto"
                 >
                     {/* Blurred Background for Stories */}
                     <div className="absolute inset-0 z-0">

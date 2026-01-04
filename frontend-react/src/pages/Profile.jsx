@@ -298,6 +298,7 @@ const Profile = () => {
                                 post={post}
                                 onComment={() => setSelectedPost(post)}
                                 onDelete={handleDeletePost}
+                                onMediaClick={setSelectedPost}
                             />
                         ))}
 
@@ -339,6 +340,7 @@ const Profile = () => {
                                 key={post.id || post._id}
                                 post={post}
                                 onComment={() => setSelectedPost(post)}
+                                onMediaClick={setSelectedPost}
                             />
                         ))}
 
@@ -357,6 +359,7 @@ const Profile = () => {
                                 key={post.id || post._id}
                                 post={post}
                                 onComment={() => setSelectedPost(post)}
+                                onMediaClick={setSelectedPost}
                             />
                         ))}
 

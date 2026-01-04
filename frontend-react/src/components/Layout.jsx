@@ -32,7 +32,7 @@ const Layout = () => {
             <Navbar isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
 
             {/* Mobile Header */}
-            <header className={`lg:hidden fixed top-0 left-0 right-0 h-16 bg-white dark:bg-surface-dark border-b border-slate-200 dark:border-border-dark flex items-center justify-between px-4 z-40 transition-transform duration-300 ${showMobileHeader ? 'translate-y-0' : '-translate-y-full'}`}>
+            <header className={`lg:hidden fixed top-0 left-0 right-0 h-14 bg-white/80 dark:bg-surface-dark/80 backdrop-blur-md border-b border-slate-200 dark:border-border-dark flex items-center justify-between px-4 z-40 transition-transform duration-300 ${showMobileHeader ? 'translate-y-0' : '-translate-y-full'}`}>
                 <h1 className="text-xl font-black bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                     WETALK
                 </h1>
@@ -58,8 +58,8 @@ const Layout = () => {
             </AnimatePresence>
 
             {/* Main Content Area */}
-            <main className="lg:pl-20 min-h-screen relative transition-all pt-16 lg:pt-0">
-                <div className="max-w-[1100px] mx-auto px-4 py-8">
+            <main className="lg:pl-20 min-h-screen relative transition-all pt-14 lg:pt-0">
+                <div className="max-w-[1100px] mx-auto px-2 sm:px-4 py-6 sm:py-8">
                     <Outlet />
                 </div>
             </main>
