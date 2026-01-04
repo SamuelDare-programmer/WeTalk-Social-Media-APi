@@ -107,9 +107,9 @@ const Home = () => {
                 <StoryTray onStoryClick={handleStoryClick} />
 
                 <div className="flex flex-col gap-6">
-                    {posts.map((post) => (
+                    {posts.map((post, index) => (
                         <PostCard
-                            key={post.id || post._id}
+                            key={post.id || post._id || `post-${index}`}
                             post={post}
                             onComment={() => setSelectedPost(post)}
                             onMediaClick={setSelectedPost}

@@ -55,7 +55,7 @@ const StoryTray = ({ onStoryClick }) => {
 
                 return (
                     <div
-                        key={storyGroup.user_id}
+                        key={storyGroup.user_id || storyGroup.username || `story-${index}`}
                         className="relative w-[84px] h-[140px] shrink-0 rounded-xl overflow-hidden bg-slate-900 border border-slate-200 dark:border-border-dark group cursor-pointer snap-start transition-all hover:scale-105 active:scale-95"
                         onClick={() => onStoryClick?.(stories, index)}
                     >

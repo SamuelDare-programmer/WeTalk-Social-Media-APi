@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from '../api/axios';
-import { Heart, MessageSquare, Music2, Loader2, Volume2, VolumeX, ChevronLeft } from 'lucide-react';
+import { Heart, MessageSquare, Music2, Loader2, Volume2, VolumeX, ChevronLeft, Play, Pause } from 'lucide-react';
 import { useVideo } from '../context/VideoContext';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -9,7 +9,7 @@ import PostDetailModal from '../components/PostDetailModal';
 
 const ShortCard = ({ post, isActive, onComment }) => {
     const videoRef = useRef(null);
-    const { isMuted, toggleMute, playVideo } = useVideo();
+    const { isMuted, setIsMuted, toggleMute, playVideo } = useVideo();
     const { user } = useAuth();
     const navigate = useNavigate();
 
@@ -19,6 +19,10 @@ const ShortCard = ({ post, isActive, onComment }) => {
     const [isPlaying, setIsPlaying] = useState(true);
     const [showHeart, setShowHeart] = useState(false);
     const [authorMetadata, setAuthorMetadata] = useState(null);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
+    const [showFeedback, setShowFeedback] = useState(false);
+    const [feedbackType, setFeedbackType] = useState('play'); // 'play' or 'pause'
     const lastTap = useRef(0);
 
     const author = authorMetadata || post.author || post.user || {};
@@ -56,7 +60,8 @@ const ShortCard = ({ post, isActive, onComment }) => {
                 playPromise.catch(error => {
                     if (error.name === 'NotAllowedError') {
                         if (videoRef.current) {
-                            videoRef.current.muted = false;
+                            videoRef.current.muted = true;
+                            setIsMuted(true);
                             videoRef.current.play().catch(e => console.error("Muted autoplay failed", e));
                         }
                     }
@@ -83,13 +88,37 @@ const ShortCard = ({ post, isActive, onComment }) => {
             if (videoRef.current) {
                 if (isPlaying) {
                     videoRef.current.pause();
+                    setFeedbackType('pause');
                 } else {
                     videoRef.current.play();
+                    setFeedbackType('play');
                 }
                 setIsPlaying(!isPlaying);
+                setShowFeedback(true);
+                setTimeout(() => setShowFeedback(false), 600);
             }
         }
         lastTap.current = now;
+    };
+
+    const handleSeek = (e) => {
+        const time = parseFloat(e.target.value);
+        if (videoRef.current) {
+            videoRef.current.currentTime = time;
+            setCurrentTime(time);
+        }
+    };
+
+    const onTimeUpdate = () => {
+        if (videoRef.current) {
+            setCurrentTime(videoRef.current.currentTime);
+        }
+    };
+
+    const onLoadedMetadata = () => {
+        if (videoRef.current) {
+            setDuration(videoRef.current.duration);
+        }
     };
 
     const handleLike = async () => {
@@ -154,6 +183,8 @@ const ShortCard = ({ post, isActive, onComment }) => {
                     playsInline
                     muted={isMuted}
                     onClick={handleTap}
+                    onTimeUpdate={onTimeUpdate}
+                    onLoadedMetadata={onLoadedMetadata}
                     crossOrigin="anonymous"
                 />
             ) : (
@@ -174,15 +205,24 @@ const ShortCard = ({ post, isActive, onComment }) => {
                         <Heart className="size-32 text-white fill-white drop-shadow-2xl opacity-80" />
                     </motion.div>
                 )}
-            </AnimatePresence>
 
-            {!isPlaying && url && (
-                <div className="absolute inset-0 z-25 flex items-center justify-center pointer-events-none">
-                    <div className="p-5 bg-black/40 backdrop-blur-md rounded-full text-white scale-110">
-                        <Volume2 className="size-10 opacity-50" />
-                    </div>
-                </div>
-            )}
+                {showFeedback && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.5, rotate: feedbackType === 'play' ? 0 : -10 }}
+                        animate={{ opacity: 1, scale: 1.5, rotate: 0 }}
+                        exit={{ opacity: 0, scale: 2, rotate: 10 }}
+                        className="absolute inset-x-0 inset-y-0 flex items-center justify-center z-40 pointer-events-none"
+                    >
+                        <div className="p-8 bg-black/40 backdrop-blur-md rounded-full text-white border border-white/20 shadow-2xl">
+                            {feedbackType === 'play' ? (
+                                <Play className="size-12 fill-current" />
+                            ) : (
+                                <Pause className="size-12 fill-current" />
+                            )}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Overlay */}
             <div className="absolute inset-0 z-15 bg-black/20 pointer-events-none" />
@@ -218,8 +258,8 @@ const ShortCard = ({ post, isActive, onComment }) => {
             </div>
 
             {/* Title & Info */}
-            <div className="absolute left-0 right-16 bottom-0 p-6 z-20">
-                <div className="flex items-center gap-3 mb-4">
+            <div className="absolute left-0 right-16 bottom-12 p-6 z-40 pointer-events-none">
+                <div className="flex items-center gap-3 mb-4 pointer-events-auto w-fit">
                     <img
                         src={avatarUrl}
                         className="size-10 rounded-full border-2 border-white cursor-pointer"
@@ -242,12 +282,37 @@ const ShortCard = ({ post, isActive, onComment }) => {
                         </button>
                     )}
                 </div>
-                <p className="text-white text-sm mb-4 line-clamp-2 max-w-md">
+                <p className="text-white text-sm mb-4 line-clamp-2 max-w-md pointer-events-none">
                     {caption}
                 </p>
                 <div className="flex items-center gap-2 text-white/90 text-sm">
                     <Music2 className="size-4 animate-spin-slow" />
                     <span className="truncate">Original Audio - {username}</span>
+                </div>
+            </div>
+
+            {/* Progress Bar scrubber */}
+            <div className="absolute bottom-0 left-0 right-0 z-30 px-4 pb-2 pt-8 bg-gradient-to-t from-black/60 to-transparent flex flex-col gap-1 transition-opacity opacity-60 hover:opacity-100 group">
+                <input
+                    type="range"
+                    min="0"
+                    max={duration || 0}
+                    step="0.1"
+                    value={currentTime}
+                    onChange={handleSeek}
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-full h-1 bg-white/20 rounded-full appearance-none cursor-pointer accent-white transition-all hover:h-1.5"
+                    style={{
+                        background: `linear-gradient(to right, white ${(currentTime / duration) * 100}%, rgba(255, 255, 255, 0.2) ${(currentTime / duration) * 100}%)`
+                    }}
+                />
+                <div className="flex justify-between px-1">
+                    <span className="text-[10px] text-white/50 font-mono">
+                        {Math.floor(currentTime / 60)}:{(Math.floor(currentTime % 60)).toString().padStart(2, '0')}
+                    </span>
+                    <span className="text-[10px] text-white/50 font-mono">
+                        {Math.floor(duration / 60)}:{(Math.floor(duration % 60)).toString().padStart(2, '0')}
+                    </span>
                 </div>
             </div>
         </div>

@@ -52,6 +52,7 @@ api.interceptors.response.use(
                 // Refresh failed - clear tokens and redirect to login
                 localStorage.removeItem('access_token');
                 localStorage.removeItem('refresh_token');
+                sessionStorage.removeItem('access_token');
                 sessionStorage.removeItem('refresh_token');
                 if (window.location.pathname !== '/login') {
                     window.location.href = '/login';

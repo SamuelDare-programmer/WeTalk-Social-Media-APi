@@ -24,7 +24,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }) => {
-  const { user, loading } = useAuth();
+  const auth = useAuth();
+
+  if (!auth) return null; // Safety guard
+
+  const { user, loading } = auth;
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
