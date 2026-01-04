@@ -9,7 +9,7 @@ function cn(...inputs) {
     return twMerge(clsx(inputs));
 }
 
-const MediaRenderer = ({ media, postId, onDoubleTap, onClick, showImmersiveIcon = true }) => {
+const MediaRenderer = ({ media, postId, onDoubleTap, onClick, showImmersiveIcon = true, forcePause = false }) => {
     const { isMuted, toggleMute, activeVideoId, playVideo } = useVideo();
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -68,12 +68,12 @@ const MediaRenderer = ({ media, postId, onDoubleTap, onClick, showImmersiveIcon 
 
     useEffect(() => {
         if (isVideo && videoRef.current) {
-            if (activeVideoId !== postId && isPlaying) {
+            if ((activeVideoId !== postId || forcePause) && isPlaying) {
                 videoRef.current.pause();
                 setIsPlaying(false);
             }
         }
-    }, [activeVideoId, postId, isPlaying, isVideo]);
+    }, [activeVideoId, postId, isPlaying, isVideo, forcePause]);
 
     return (
         <div

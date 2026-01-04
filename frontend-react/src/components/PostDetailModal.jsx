@@ -9,7 +9,7 @@ import { useVideo } from '../context/VideoContext';
 
 const PostDetailModal = ({ post, onClose, onLike, onBookmark }) => {
     const { user } = useAuth();
-    const { isMuted, toggleMute } = useVideo();
+    const { isMuted, toggleMute, playVideo } = useVideo();
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState('');
     const [loadingComments, setLoadingComments] = useState(true);
@@ -23,6 +23,18 @@ const PostDetailModal = ({ post, onClose, onLike, onBookmark }) => {
     const caption = post.caption || post.content || '';
     const username = author.username || 'unknown';
     const avatarUrl = author.avatar_url || `https://ui-avatars.com/api/?name=${username}&background=random`;
+
+    // Ensure we are the active video when modal opens to pause background feed
+    useEffect(() => {
+        if (postId) {
+            playVideo(postId);
+        }
+    }, [postId, playVideo]);
+
+    const getVideoUrl = (url) => {
+        if (!url) return '';
+        return url.replace(/\.(jpg|jpeg|png|webp)$/i, '.mp4');
+    };
 
     useEffect(() => {
         const fetchComments = async () => {
@@ -128,7 +140,7 @@ const PostDetailModal = ({ post, onClose, onLike, onBookmark }) => {
                             </div>
                         ) : (
                             <>
-                                <MediaRenderer media={post.media} postId={postId} showImmersiveIcon={false} />
+                                <MediaRenderer media={post.media} postId={postId} showImmersiveIcon={false} forcePause={isFullscreen} />
                                 <button
                                     onClick={() => setIsFullscreen(true)}
                                     className="absolute bottom-4 right-4 z-20 p-3 bg-black/40 backdrop-blur-md rounded-xl text-white opacity-0 group-hover:opacity-100 transition-all hover:bg-black/60 border border-white/10"
@@ -287,7 +299,20 @@ const PostDetailModal = ({ post, onClose, onLike, onBookmark }) => {
                         {/* Main Media - Full Screen Focus */}
                         <div className="relative z-10 w-full h-full flex items-center justify-center">
                             <div className="w-full h-full p-2 md:p-8">
-                                <MediaRenderer media={post.media} postId={postId} showImmersiveIcon={false} />
+                                {post.media?.[0]?.media_type?.startsWith('video') ? (
+                                    <video
+                                        controls
+                                        autoPlay
+                                        name="media"
+                                        className="w-full h-full object-contain"
+                                        src={getVideoUrl(post.media[0].view_link || post.media[0].url)}
+                                        muted={isMuted}
+                                    >
+                                        <source src={getVideoUrl(post.media[0].view_link || post.media[0].url)} type="video/mp4" />
+                                    </video>
+                                ) : (
+                                    <MediaRenderer media={post.media} postId={postId} showImmersiveIcon={false} />
+                                )}
                             </div>
                         </div>
                     </motion.div>
