@@ -95,7 +95,7 @@ async def confirm_password_reset(payload: PasswordResetModel):
 async def get_user_by_identifier(identifier: str):
     user = await user_service.get_user_by_id(identifier)
     if not user:
-        user = await user_service.get_user_by_username_or_email(identifier)
+        user = await user_service.get_user(identifier)
     if not user:
         raise UserNotFoundException()
     return user
