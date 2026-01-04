@@ -19,16 +19,43 @@ export const AuthProvider = ({ children }) => {
     };
 
     useEffect(() => {
-        fetchUser();
+        const initializeAuth = async () => {
+            const accessToken = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+            const refreshToken = localStorage.getItem('refresh_token') || sessionStorage.getItem('refresh_token');
+
+            if (!accessToken && refreshToken) {
+                // Try to refresh before initial user fetch
+                try {
+                    const storage = localStorage.getItem('refresh_token') ? localStorage : sessionStorage;
+                    const res = await axios.get('/auth/users/refresh-token', {
+                        headers: { Authorization: `Bearer ${refreshToken}` }
+                    });
+                    const { access_token } = res.data;
+                    storage.setItem('access_token', access_token);
+                } catch (err) {
+                    console.error("Initial refresh failed", err);
+                }
+            }
+            await fetchUser();
+        };
+
+        initializeAuth();
     }, []);
 
-    const login = async (token) => {
-        localStorage.setItem('access_token', token);
+    const login = async (accessToken, refreshToken, rememberMe = false) => {
+        const storage = rememberMe ? localStorage : sessionStorage;
+        storage.setItem('access_token', accessToken);
+        if (refreshToken) {
+            storage.setItem('refresh_token', refreshToken);
+        }
         await fetchUser();
     };
 
     const logout = () => {
         localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        sessionStorage.removeItem('access_token');
+        sessionStorage.removeItem('refresh_token');
         setUser(null);
     };
 

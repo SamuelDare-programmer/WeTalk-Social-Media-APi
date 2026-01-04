@@ -15,32 +15,82 @@ const ShortCard = ({ post, isActive, onComment }) => {
 
     const [liked, setLiked] = useState(post.is_liked);
     const [likesCount, setLikesCount] = useState(post.likes_count || 0);
-    const [isFollowing, setIsFollowing] = useState(post.author?.is_following);
+    const [isFollowing, setIsFollowing] = useState(false);
+    const [isPlaying, setIsPlaying] = useState(true);
+    const [showHeart, setShowHeart] = useState(false);
+    const [authorMetadata, setAuthorMetadata] = useState(null);
+    const lastTap = useRef(0);
 
-    const isOwner = user?.id === post.author?.id || user?._id === post.author?.id;
+    const author = authorMetadata || post.author || post.user || {};
+    const username = author.username || 'unknown';
+    const avatarUrl = author.avatar_url || `https://ui-avatars.com/api/?name=${username}&background=random`;
+    const caption = post.caption || post.content || '';
+
+    const isOwner = user?.id === author?.id || user?._id === author?.id;
     const postId = post.id || post._id;
+    const ownerId = post.owner_id || post.user_id || author.id || author._id;
+
+    // Fetch-on-demand metadata if missing
+    useEffect(() => {
+        if (!author.username && ownerId) {
+            const fetchAuthor = async () => {
+                try {
+                    const res = await axios.get(`/auth/users/${ownerId}`);
+                    setAuthorMetadata(res.data);
+                    if (res.data.is_following !== undefined) setIsFollowing(res.data.is_following);
+                } catch (err) {
+                    console.error("Failed to fetch author metadata", err);
+                }
+            };
+            fetchAuthor();
+        } else if (author.is_following !== undefined) {
+            setIsFollowing(author.is_following);
+        }
+    }, [ownerId, author.username]);
 
     useEffect(() => {
         if (isActive && videoRef.current) {
+            videoRef.current.currentTime = 0;
             const playPromise = videoRef.current.play();
             if (playPromise !== undefined) {
                 playPromise.catch(error => {
                     if (error.name === 'NotAllowedError') {
-                        // Fallback to muted autoplay if browser blocks unmuted
                         if (videoRef.current) {
-                            videoRef.current.muted = true;
+                            videoRef.current.muted = false;
                             videoRef.current.play().catch(e => console.error("Muted autoplay failed", e));
                         }
-                    } else {
-                        console.log("Autoplay failed", error);
                     }
                 });
             }
+            setIsPlaying(true);
             playVideo(postId);
         } else if (videoRef.current) {
             videoRef.current.pause();
+            setIsPlaying(false);
         }
     }, [isActive, postId, playVideo]);
+
+    const handleTap = (e) => {
+        const now = Date.now();
+        const DOUBLE_TAP_DELAY = 300;
+        if (now - lastTap.current < DOUBLE_TAP_DELAY) {
+            // Double tap
+            handleLike();
+            setShowHeart(true);
+            setTimeout(() => setShowHeart(false), 800);
+        } else {
+            // Single tap
+            if (videoRef.current) {
+                if (isPlaying) {
+                    videoRef.current.pause();
+                } else {
+                    videoRef.current.play();
+                }
+                setIsPlaying(!isPlaying);
+            }
+        }
+        lastTap.current = now;
+    };
 
     const handleLike = async () => {
         const nextLiked = !liked;
@@ -65,9 +115,9 @@ const ShortCard = ({ post, isActive, onComment }) => {
         setIsFollowing(nextFollowing);
         try {
             if (nextFollowing) {
-                await axios.post(`/users/${post.author.username}/follow`);
+                await axios.post(`/users/${username}/follow`);
             } else {
-                await axios.post(`/users/${post.author.username}/unfollow`);
+                await axios.post(`/users/${username}/unfollow`);
             }
         } catch (err) {
             console.error('Follow failed', err);
@@ -99,16 +149,38 @@ const ShortCard = ({ post, isActive, onComment }) => {
                 <video
                     ref={videoRef}
                     src={url}
-                    className="relative z-10 max-h-full w-auto object-contain shadow-2xl"
+                    className="relative z-10 max-h-full w-auto object-contain shadow-2xl transition-transform duration-300"
                     loop
                     playsInline
                     muted={isMuted}
-                    onClick={handleLike} // Double tap could be implemented here too
+                    onClick={handleTap}
                     crossOrigin="anonymous"
                 />
             ) : (
                 <div className="relative z-10 flex items-center justify-center text-white/50">
-                    <p>Video unavailable</p>
+                    <Loader2 className="size-8 animate-spin" />
+                </div>
+            )}
+
+            {/* Tap Animations */}
+            <AnimatePresence>
+                {showHeart && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={{ opacity: 1, scale: 1.2 }}
+                        exit={{ opacity: 0, scale: 1.5 }}
+                        className="absolute inset-x-0 inset-y-0 flex items-center justify-center z-30 pointer-events-none"
+                    >
+                        <Heart className="size-32 text-white fill-white drop-shadow-2xl opacity-80" />
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {!isPlaying && url && (
+                <div className="absolute inset-0 z-25 flex items-center justify-center pointer-events-none">
+                    <div className="p-5 bg-black/40 backdrop-blur-md rounded-full text-white scale-110">
+                        <Volume2 className="size-10 opacity-50" />
+                    </div>
                 </div>
             )}
 
@@ -149,13 +221,13 @@ const ShortCard = ({ post, isActive, onComment }) => {
             <div className="absolute left-0 right-16 bottom-0 p-6 z-20">
                 <div className="flex items-center gap-3 mb-4">
                     <img
-                        src={post.author?.avatar_url || `https://ui-avatars.com/api/?name=${post.author?.username}`}
+                        src={avatarUrl}
                         className="size-10 rounded-full border-2 border-white cursor-pointer"
                         alt=""
-                        onClick={() => post.author?.username && navigate(`/profile/${post.author?.username}`)}
+                        onClick={() => username && navigate(`/profile/${username}`)}
                     />
-                    <span className="text-white font-bold text-lg cursor-pointer" onClick={() => post.author?.username && navigate(`/profile/${post.author?.username}`)}>
-                        @{post.author?.username}
+                    <span className="text-white font-bold text-lg cursor-pointer" onClick={() => username && navigate(`/profile/${username}`)}>
+                        @{username}
                     </span>
 
                     {!isOwner && (
@@ -171,11 +243,11 @@ const ShortCard = ({ post, isActive, onComment }) => {
                     )}
                 </div>
                 <p className="text-white text-sm mb-4 line-clamp-2 max-w-md">
-                    {post.caption}
+                    {caption}
                 </p>
                 <div className="flex items-center gap-2 text-white/90 text-sm">
                     <Music2 className="size-4 animate-spin-slow" />
-                    <span className="truncate">Original Audio - {post.author?.username}</span>
+                    <span className="truncate">Original Audio - {username}</span>
                 </div>
             </div>
         </div>
@@ -184,11 +256,17 @@ const ShortCard = ({ post, isActive, onComment }) => {
 
 const Shorts = () => {
     const navigate = useNavigate();
+    const { isMuted, setIsMuted, toggleMute } = useVideo();
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeIndex, setActiveIndex] = useState(0);
     const [selectedPost, setSelectedPost] = useState(null);
     const containerRef = useRef(null);
+
+    // Unmute on mount for Shorts experience
+    useEffect(() => {
+        setIsMuted(false);
+    }, [setIsMuted]);
 
     useEffect(() => {
         const fetchShorts = async () => {

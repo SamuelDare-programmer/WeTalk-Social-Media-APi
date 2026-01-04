@@ -36,18 +36,7 @@ const Login = () => {
 
             if (response.data.access_token) {
                 const { access_token, refresh_token } = response.data;
-
-                if (refresh_token) {
-                    if (rememberMe) {
-                        localStorage.setItem('refresh_token', refresh_token);
-                        sessionStorage.removeItem('refresh_token');
-                    } else {
-                        sessionStorage.setItem('refresh_token', refresh_token);
-                        localStorage.removeItem('refresh_token');
-                    }
-                }
-                localStorage.setItem('access_token', access_token);
-                await login(access_token);
+                await login(access_token, refresh_token, rememberMe);
                 navigate('/');
             }
         } catch (err) {

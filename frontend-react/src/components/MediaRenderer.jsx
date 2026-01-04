@@ -9,7 +9,7 @@ function cn(...inputs) {
     return twMerge(clsx(inputs));
 }
 
-const MediaRenderer = ({ media, postId, onDoubleTap, onClick }) => {
+const MediaRenderer = ({ media, postId, onDoubleTap, onClick, showImmersiveIcon = true }) => {
     const { isMuted, toggleMute, activeVideoId, playVideo } = useVideo();
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -153,11 +153,13 @@ const MediaRenderer = ({ media, postId, onDoubleTap, onClick }) => {
             )}
 
             {/* Immersive Icon (Maximize) */}
-            <div className="absolute top-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
-                <div className="p-2 rounded-lg bg-black/40 backdrop-blur-md text-white border border-white/10">
-                    <Maximize2 className="size-4 sm:size-5" />
+            {showImmersiveIcon && (
+                <div className="absolute top-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="p-2 rounded-lg bg-black/40 backdrop-blur-md text-white border border-white/10 text-xs">
+                        <Maximize2 className="size-4 sm:size-5" />
+                    </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 };

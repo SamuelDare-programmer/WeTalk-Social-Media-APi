@@ -38,7 +38,7 @@ const Messages = () => {
         const token = localStorage.getItem('access_token');
         if (!token) return;
 
-        const wsUrl = `ws://127.0.0.1:8000/api/v1/conversations/ws?token=${token}`;
+        const wsUrl = `ws://considerable-cathrin-wetalk-0d4f7320.koyeb.app/api/v1/conversations/ws?token=${token}`;
         ws.current = new WebSocket(wsUrl);
 
         ws.current.onmessage = (event) => {

@@ -22,7 +22,7 @@ export const VideoProvider = ({ children }) => {
     };
 
     return (
-        <VideoContext.Provider value={{ isMuted, toggleMute, activeVideoId, playVideo }}>
+        <VideoContext.Provider value={{ isMuted, setIsMuted, toggleMute, activeVideoId, playVideo }}>
             {children}
         </VideoContext.Provider>
     );

@@ -1,22 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { X, Heart, MessageCircle, Share2, Bookmark, Send, MoreHorizontal, Trash2 } from 'lucide-react';
+import { X, Heart, MessageCircle, Share2, Bookmark, Send, MoreHorizontal, Maximize2, ChevronLeft, Volume2, VolumeX } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import MediaRenderer from './MediaRenderer';
 import { formatDistanceToNow } from 'date-fns';
+import { useVideo } from '../context/VideoContext';
 
 const PostDetailModal = ({ post, onClose, onLike, onBookmark }) => {
     const { user } = useAuth();
+    const { isMuted, toggleMute } = useVideo();
     const [comments, setComments] = useState([]);
     const [newComment, setNewComment] = useState('');
     const [loadingComments, setLoadingComments] = useState(true);
     const [isLiked, setIsLiked] = useState(post.is_liked);
     const [likesCount, setLikesCount] = useState(post.likes_count || 0);
     const [isBookmarked, setIsBookmarked] = useState(post.is_bookmarked);
+    const [isFullscreen, setIsFullscreen] = useState(false);
 
     const postId = post.id || post._id;
-    const author = post.author || {};
+    const author = post.author || post.user || {};
+    const caption = post.caption || post.content || '';
+    const username = author.username || 'unknown';
+    const avatarUrl = author.avatar_url || `https://ui-avatars.com/api/?name=${username}&background=random`;
 
     useEffect(() => {
         const fetchComments = async () => {
@@ -38,7 +44,6 @@ const PostDetailModal = ({ post, onClose, onLike, onBookmark }) => {
 
         try {
             const res = await axios.post(`/posts/${postId}/comments`, { content: newComment });
-            // Add new comment to state optimistically or from response
             const addedComment = {
                 ...res.data,
                 author: {
@@ -88,6 +93,12 @@ const PostDetailModal = ({ post, onClose, onLike, onBookmark }) => {
         }
     };
 
+    const getPrimaryMediaUrl = () => {
+        if (!post.media || post.media.length === 0) return null;
+        const media = post.media[0];
+        return media.view_link || media.url;
+    };
+
     return (
         <motion.div
             initial={{ opacity: 0 }}
@@ -110,13 +121,21 @@ const PostDetailModal = ({ post, onClose, onLike, onBookmark }) => {
 
                 {/* Left: Media */}
                 <div className="w-full md:w-[60%] bg-black flex items-center justify-center relative bg-pattern">
-                    <div className="max-h-[50vh] md:max-h-full w-full h-full flex items-center justify-center">
+                    <div className="max-h-[50vh] md:max-h-full w-full h-full flex items-center justify-center relative group">
                         {(!post.media || post.media.length === 0) ? (
                             <div className="w-full h-full min-h-[400px] flex items-center justify-center p-8 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white text-center font-bold text-2xl">
                                 {post.caption}
                             </div>
                         ) : (
-                            <MediaRenderer media={post.media} postId={postId} />
+                            <>
+                                <MediaRenderer media={post.media} postId={postId} showImmersiveIcon={false} />
+                                <button
+                                    onClick={() => setIsFullscreen(true)}
+                                    className="absolute bottom-4 right-4 z-20 p-3 bg-black/40 backdrop-blur-md rounded-xl text-white opacity-0 group-hover:opacity-100 transition-all hover:bg-black/60 border border-white/10"
+                                >
+                                    <Maximize2 className="size-5" />
+                                </button>
+                            </>
                         )}
                     </div>
                 </div>
@@ -127,13 +146,13 @@ const PostDetailModal = ({ post, onClose, onLike, onBookmark }) => {
                     <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between sticky top-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md z-10">
                         <div className="flex items-center gap-3">
                             <img
-                                src={author.avatar_url || `https://ui-avatars.com/api/?name=${author.username}`}
+                                src={avatarUrl}
                                 className="size-10 rounded-full border border-slate-200 dark:border-slate-700"
                                 alt=""
                             />
                             <div>
                                 <h4 className="font-bold text-slate-900 dark:text-white text-sm hover:underline cursor-pointer">
-                                    {author.username}
+                                    {username}
                                 </h4>
                                 <p className="text-xs text-slate-500">{author.bio?.substring(0, 30) || 'Verified User'}</p>
                             </div>
@@ -146,9 +165,9 @@ const PostDetailModal = ({ post, onClose, onLike, onBookmark }) => {
                     {/* Scrollable Content (Caption + Comments) */}
                     <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
                         {/* Caption */}
-                        {post.caption && (post.media && post.media.length > 0) && (
+                        {caption && (
                             <div className="mb-6">
-                                <span className="text-slate-800 dark:text-slate-300 text-sm whitespace-pre-wrap">{post.caption}</span>
+                                <span className="text-slate-800 dark:text-slate-300 text-sm whitespace-pre-wrap">{caption}</span>
                                 <div className="text-xs text-slate-400 mt-2">{formatDistanceToNow(new Date(post.created_at))} ago</div>
                             </div>
                         )}
@@ -238,6 +257,42 @@ const PostDetailModal = ({ post, onClose, onLike, onBookmark }) => {
                     <X className="size-8" />
                 </button>
             </motion.div>
+
+            {/* True Immersive Fullscreen Overlay */}
+            <AnimatePresence>
+                {isFullscreen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[110] bg-black flex flex-col items-center justify-center overflow-hidden"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Header/Controls */}
+                        <div className="absolute top-0 inset-x-0 z-20 p-6 flex items-center justify-between bg-gradient-to-b from-black/60 to-transparent">
+                            <button
+                                onClick={() => setIsFullscreen(false)}
+                                className="p-3 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all active:scale-95 border border-white/10"
+                            >
+                                <ChevronLeft className="size-6" />
+                            </button>
+
+                            <div className="flex items-center gap-4">
+                                <button onClick={toggleMute} className="p-3 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all border border-white/10">
+                                    {isMuted ? <VolumeX className="size-6" /> : <Volume2 className="size-6" />}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Main Media - Full Screen Focus */}
+                        <div className="relative z-10 w-full h-full flex items-center justify-center">
+                            <div className="w-full h-full p-2 md:p-8">
+                                <MediaRenderer media={post.media} postId={postId} showImmersiveIcon={false} />
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 };

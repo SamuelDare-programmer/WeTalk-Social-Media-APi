@@ -12,7 +12,7 @@ const api = axios.create({
 // Request Interceptor: Attach Access Token
 api.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('access_token');
+        const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
         if (token) {
             config.headers['Authorization'] = `Bearer ${token}`;
         }
@@ -33,7 +33,8 @@ api.interceptors.response.use(
             originalRequest._retry = true;
 
             try {
-                const refreshToken = localStorage.getItem('refresh_token') || sessionStorage.getItem('refresh_token');
+                const storage = localStorage.getItem('refresh_token') ? localStorage : sessionStorage;
+                const refreshToken = storage.getItem('refresh_token');
                 if (!refreshToken) throw new Error('No refresh token available');
 
                 // Call backend to refresh token
@@ -42,7 +43,7 @@ api.interceptors.response.use(
                 });
 
                 const { access_token } = response.data;
-                localStorage.setItem('access_token', access_token);
+                storage.setItem('access_token', access_token);
 
                 // Update header and retry original request
                 originalRequest.headers['Authorization'] = `Bearer ${access_token}`;
