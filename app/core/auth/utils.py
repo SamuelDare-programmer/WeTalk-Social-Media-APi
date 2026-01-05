@@ -20,7 +20,12 @@ def create_access_token(data: dict, expiry: timedelta | None = None, refresh: bo
     payload = data.copy() 
 
     # 2. Add Expiration
-    expire = datetime.now() + (expiry if expiry else timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
+    if expiry:
+        expire = datetime.utcnow() + expiry
+    else:
+        minutes = settings.REFRESH_TOKEN_EXPIRE_MINUTES if refresh else settings.ACCESS_TOKEN_EXPIRE_MINUTES
+        expire = datetime.utcnow() + timedelta(minutes=minutes)
+    
     payload.update({"exp": expire})
 
     # 3. Add JTI (Unique Identifier for the token)
