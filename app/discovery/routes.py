@@ -214,6 +214,7 @@ async def get_explore_feed(
     """
     Explore Feed: Discover engaging content from users you don't follow.
     """
+    service = DiscoveryService()
     engagement_service = EngagementService()
     
     posts = await service.get_explore_feed(str(current_user.id), limit, offset, media_type=type)
