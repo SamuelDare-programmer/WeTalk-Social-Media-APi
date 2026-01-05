@@ -235,29 +235,37 @@ class DiscoveryService:
             ]
         }).to_list()
         
-        excluded_user_ids = {current_user_id}
-        excluded_user_ids.update(r.blocker_id for r in blocked_records)
-        excluded_user_ids.update(r.blocked_id for r in blocked_records)
+        # Base exclusion (Blocked users)
+        blocked_user_ids = set()
+        blocked_user_ids.update(r.blocker_id for r in blocked_records)
+        blocked_user_ids.update(r.blocked_id for r in blocked_records)
 
-        # 2. Aggregation Pipeline to find Posts that HAVE video media
-        pipeline = [
-            # Filter out blocked authors
-            {"$match": {"owner_id": {"$nin": list(excluded_user_ids)}}},
+        # ------------------------------------------------------------------
+        # Strategy: "Prioritized Mix"
+        # 1. Fetch random videos from OTHERS first.
+        # 2. If we don't hit the limit, backfill with SELF videos.
+        # 3. Shuffle everything together.
+        # ------------------------------------------------------------------
+
+        # --- STEP 1: Fetch OTHERS ---
+        excluded_ids_others = blocked_user_ids.copy()
+        excluded_ids_others.add(current_user_id) # Don't fetch me yet
+        
+        others_pipeline = [
+            # Filter: Not me, Not blocked
+            {"$match": {"owner_id": {"$nin": list(excluded_ids_others)}}},
             
-            # Lookup media to check file_type
-            # detailed info: Beanie stores Link as DBRef usually, but we need to check how it is stored.
-            # Assuming standard reference or list of IDs. 
-            # If Beanie uses simple links, $lookup works on the ID list.
+            # Lookup media
             {
                 "$lookup": {
                     "from": "media",
-                    "localField": "media.$id", # Beanie stores Links as DBRefs ({$ref: "media", $id: ObjectId})
+                    "localField": "media.$id", 
                     "foreignField": "_id",
                     "as": "media_docs"
                 }
             },
             
-            # Filter for video content (explicit video type OR cloudinary video path)
+            # Filter video
             {"$match": {
                 "$or": [
                     {"media_docs.file_type": "video"},
@@ -265,17 +273,46 @@ class DiscoveryService:
                 ]
             }},
             
-            # Randomize (User wants a "modern" random feed)
+            # Randomize
             {"$sample": {"size": limit}} 
         ]
         
-        # Execute Aggregation
-        # We only need the _id to fetch the full document with links afterwards
-        # This is safer than converting aggregation result back to Beanie Document manually
-        aggregation_result = await Post.find_many({}).aggregate(pipeline).to_list()
+        others_result = await Post.find_many({}).aggregate(others_pipeline).to_list()
+        found_ids = [doc["_id"] for doc in others_result]
         
-        found_ids = [doc["_id"] for doc in aggregation_result]
+        # --- STEP 2: Backfill with SELF (if needed) ---
+        remaining_slots = limit - len(found_ids)
         
+        if remaining_slots > 0:
+            self_pipeline = [
+                # Filter: ONLY me
+                {"$match": {"owner_id": current_user_id}},
+                
+                # Lookup media
+                {
+                    "$lookup": {
+                        "from": "media",
+                        "localField": "media.$id", 
+                        "foreignField": "_id",
+                        "as": "media_docs"
+                    }
+                },
+                
+                # Filter video
+                {"$match": {
+                    "$or": [
+                        {"media_docs.file_type": "video"},
+                        {"media_docs.view_link": {"$regex": "/video/upload/"}}
+                    ]
+                }},
+                
+                # Randomize my own posts too
+                {"$sample": {"size": remaining_slots}} 
+            ]
+             
+            self_result = await Post.find_many({}).aggregate(self_pipeline).to_list()
+            found_ids.extend([doc["_id"] for doc in self_result])
+
         if not found_ids:
             return []
 

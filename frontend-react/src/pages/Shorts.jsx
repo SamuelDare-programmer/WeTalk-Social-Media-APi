@@ -7,8 +7,9 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import PostDetailModal from '../components/PostDetailModal';
 
-const ShortCard = ({ post, isActive, onComment }) => {
+const ShortCard = ({ post, mediaItem, isActive, onComment }) => {
     const videoRef = useRef(null);
+    // ... (rest of context hooks)
     const { isMuted, setIsMuted, toggleMute, playVideo } = useVideo();
     const { user } = useAuth();
     const navigate = useNavigate();
@@ -154,8 +155,8 @@ const ShortCard = ({ post, isActive, onComment }) => {
         }
     };
 
-    // Ensure we select the video media if multiple exist (e.g. mixed media post)
-    const media = post.media?.find(m => m.media_type?.startsWith('video'));
+    // Use passed mediaItem OR find the first video (fallback)
+    const media = mediaItem || post.media?.find(m => m.media_type?.startsWith('video'));
     const baseVideoUrl = media?.view_link || media?.url;
 
     // Fix: Cloudinary might return .jpg for video URLs if they were used as thumbnails elsewhere.
@@ -324,7 +325,7 @@ const ShortCard = ({ post, isActive, onComment }) => {
 const Shorts = () => {
     const navigate = useNavigate();
     const { isMuted, setIsMuted, toggleMute } = useVideo();
-    const [posts, setPosts] = useState([]);
+    const [feedItems, setFeedItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeIndex, setActiveIndex] = useState(0);
     const [selectedPost, setSelectedPost] = useState(null);
@@ -339,7 +340,24 @@ const Shorts = () => {
         const fetchShorts = async () => {
             try {
                 const res = await axios.get('/discovery/shorts?limit=20');
-                setPosts(res.data);
+
+                // Explode Logic: Create a unique feed item for EVERY video in a post
+                const explodedItems = res.data.flatMap(post => {
+                    // Filter for videos (checking both type and URL as fallback)
+                    const videos = post.media?.filter(m =>
+                        (m.media_type && m.media_type.startsWith('video')) ||
+                        (m.view_link && m.view_link.includes('/video/upload/')) ||
+                        (m.media_type === 'video') // Extra safety
+                    ) || [];
+
+                    return videos.map((video, idx) => ({
+                        _feedId: `${post.id || post._id}_${video.media_id || video._id || idx}`,
+                        post: post,
+                        mediaItem: video
+                    }));
+                });
+
+                setFeedItems(explodedItems);
             } catch (err) {
                 console.error('Failed to fetch shorts', err);
             } finally {
@@ -378,13 +396,14 @@ const Shorts = () => {
                 onScroll={handleScroll}
                 className="h-full w-full overflow-y-scroll snap-y snap-mandatory hide-scrollbar scroll-smooth"
             >
-                {posts.length > 0 ? (
-                    posts.map((post, idx) => (
+                {feedItems.length > 0 ? (
+                    feedItems.map((item, idx) => (
                         <ShortCard
-                            key={post.id || post._id}
-                            post={post}
+                            key={item._feedId}
+                            post={item.post}
+                            mediaItem={item.mediaItem}
                             isActive={idx === activeIndex}
-                            onComment={() => setSelectedPost(post)}
+                            onComment={() => setSelectedPost(item.post)}
                         />
                     ))
                 ) : (
