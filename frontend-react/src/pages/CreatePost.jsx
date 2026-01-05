@@ -18,6 +18,7 @@ const CreatePost = () => {
     const [userCoords, setUserCoords] = useState(null);
     const [isCustomLocationMode, setIsCustomLocationMode] = useState(false);
     const [customLocation, setCustomLocation] = useState({ name: '', city: '', state: '', country: '' });
+    const [shake, setShake] = useState(false);
     const navigate = useNavigate();
 
     // Load recent locations on mount
@@ -57,13 +58,34 @@ const CreatePost = () => {
 
     const handleFileChange = (e) => {
         if (e.target.files) {
+            const MAX_FILE_SIZE = 30 * 1024 * 1024; // 30MB
             const filesArray = Array.from(e.target.files);
-            const newPreviews = filesArray.map(file => ({
-                url: URL.createObjectURL(file),
-                type: file.type
-            }));
-            setSelectedFiles(prev => [...prev, ...filesArray]);
-            setPreviews(prev => [...prev, ...newPreviews]);
+
+            const validFiles = [];
+            const invalidFiles = [];
+
+            filesArray.forEach(file => {
+                if (file.size > MAX_FILE_SIZE) {
+                    invalidFiles.push(file.name);
+                } else {
+                    validFiles.push(file);
+                }
+            });
+
+            if (invalidFiles.length > 0) {
+                setShake(true);
+                setTimeout(() => setShake(false), 500);
+                alert(`The following files are too large (max 30MB):\n${invalidFiles.join('\n')}`);
+            }
+
+            if (validFiles.length > 0) {
+                const newPreviews = validFiles.map(file => ({
+                    url: URL.createObjectURL(file),
+                    type: file.type
+                }));
+                setSelectedFiles(prev => [...prev, ...validFiles]);
+                setPreviews(prev => [...prev, ...newPreviews]);
+            }
         }
     };
 
@@ -191,7 +213,18 @@ const CreatePost = () => {
                 </button>
             </div>
 
-            <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-border-dark rounded-3xl overflow-hidden shadow-sm flex flex-col md:flex-row min-h-[500px]">
+            <style>{`
+                @keyframes shake {
+                    0%, 100% { transform: translateX(0); }
+                    10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+                    20%, 40%, 60%, 80% { transform: translateX(4px); }
+                }
+                .animate-shake {
+                    animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+                }
+            `}</style>
+
+            <div className={`bg-white dark:bg-surface-dark border border-slate-200 dark:border-border-dark rounded-3xl overflow-hidden shadow-sm flex flex-col md:flex-row min-h-[500px] ${shake ? 'animate-shake' : ''}`}>
                 {/* Media Upload Area */}
                 <div className="flex-1 bg-slate-50 dark:bg-slate-900/50 border-b md:border-b-0 md:border-r border-slate-200 dark:border-border-dark flex flex-col relative group overflow-hidden">
                     {previews.length > 0 ? (

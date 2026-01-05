@@ -9,6 +9,9 @@ from beanie.operators import In
 # Import Schemas
 from .schemas import CreatePostRequest, PostResponse, ImageUploadResponse, VideoUploadResponse
 
+# Import Errors
+from app.core.errors import FileSizeLimitException
+
 # Import Services
 from .services import PostService
 from app.core.media.service import MediaService
@@ -22,6 +25,8 @@ from app.core.auth.dependencies import get_current_user
 
 router = APIRouter(prefix="/posts", tags=["posts"])
 
+MAX_FILE_SIZE = 30 * 1024 * 1024 # 30MB
+
 @router.post("/upload/image", status_code=status.HTTP_201_CREATED, response_model=ImageUploadResponse)
 async def upload_image_endpoint(
     file: UploadFile = File(...),
@@ -31,6 +36,9 @@ async def upload_image_endpoint(
     Endpoint to upload an image file.
     Uploads immediately and returns media details.
     """
+    if file.size and file.size > MAX_FILE_SIZE:
+        raise FileSizeLimitException("File too large (max 30MB)")
+
     media_service = MediaService()
     response = await media_service.upload_image(
         owner_id=str(current_user.id),
@@ -50,6 +58,9 @@ async def upload_video_endpoint(
     Endpoint to upload a video file.
     Queues the video processing task and returns a confirmation message.
     """
+    if file.size and file.size > MAX_FILE_SIZE:
+        raise FileSizeLimitException("File too large (max 30MB)")
+
     # 1. Save file to temp disk storage
     temp_dir = ".temp_uploads"
     os.makedirs(temp_dir, exist_ok=True)

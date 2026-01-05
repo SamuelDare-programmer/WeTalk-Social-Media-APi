@@ -100,6 +100,11 @@ class StoryNotFoundException(WeTalkException):
     pass
 
 
+class FileSizeLimitException(WeTalkException):
+    """Exception raised when a file exceeds the size limit."""
+    pass
+
+
 class ConversationNotFoundException(WeTalkException):
     """Exception raised when a conversation is not found."""
     pass
@@ -330,6 +335,18 @@ def register_exceptions(app: FastAPI):
                 "message": "Conversation not found",
                 "error_code": "conversation_not_found",
                 "resolution": "Check the conversation ID",
+            },
+        ),
+    )
+
+    app.add_exception_handler(
+        FileSizeLimitException,
+        create_exception_handler(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            initial_detail={
+                "message": "File too large",
+                "error_code": "file_too_large",
+                "resolution": "Ensure the file is smaller than 30MB",
             },
         ),
     )
