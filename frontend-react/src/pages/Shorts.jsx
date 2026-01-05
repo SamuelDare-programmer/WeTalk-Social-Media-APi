@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import PostDetailModal from '../components/PostDetailModal';
+import VideoPlayer from '../components/VideoPlayer';
 
 const ShortCard = ({ post, mediaItem, isActive, onComment }) => {
     const videoRef = useRef(null);
@@ -157,30 +158,32 @@ const ShortCard = ({ post, mediaItem, isActive, onComment }) => {
 
     // Use passed mediaItem OR find the first video (fallback)
     const media = mediaItem || post.media?.find(m => m.media_type?.startsWith('video'));
-    const baseVideoUrl = media?.view_link || media?.url;
 
-    // Fix: Cloudinary might return .jpg for video URLs if they were used as thumbnails elsewhere.
-    // We force .mp4 for the video player and .jpg for the blurred background optimization.
-    // Force .mp4 for the video player (especially if Cloudinary returned a .jpg thumbnail URL)
-    // Aggressively replace common image extensions with .mp4
-    const url = baseVideoUrl?.replace(/\.(jpg|jpeg|png|webp)$/i, ".mp4").replace(/\.[^/.]+$/, ".mp4");
-    const thumbnailUrl = baseVideoUrl?.replace(/\.[^/.]+$/, ".jpg");
+    // Prefer explicitly generated URLs from backend, fallback to manual fixes
+    const hlsUrl = media?.hls_url;
+    const optimizedUrl = media?.optimized_url || media?.view_link?.replace(/\.(jpg|jpeg|png|webp)$/i, ".mp4").replace(/\.[^/.]+$/, ".mp4");
+    const thumbUrl = media?.thumbnail_url || media?.view_link?.replace(/\.[^/.]+$/, ".jpg");
+
+    // For VideoPlayer src, we want HLS if available, otherwise optimizedUrl
+    const videoSrc = hlsUrl || optimizedUrl;
 
     return (
         <div className="relative h-full w-full bg-slate-900 snap-start flex items-center justify-center overflow-hidden">
             {/* Blurred Background for immersion */}
             <div className="absolute inset-0 z-0">
                 <img
-                    src={thumbnailUrl}
+                    src={thumbUrl}
                     className="h-full w-full object-cover blur-3xl opacity-50 scale-110"
                     alt=""
                 />
             </div>
 
-            {url ? (
-                <video
+            {videoSrc ? (
+                <VideoPlayer
                     ref={videoRef}
-                    src={url}
+                    src={videoSrc}
+                    fallbackSrc={optimizedUrl}
+                    poster={thumbUrl}
                     className="relative z-10 max-h-full w-auto object-contain shadow-2xl transition-transform duration-300"
                     loop
                     playsInline

@@ -150,7 +150,8 @@ const Explore = () => {
                         const isLarge = idx % 10 === 0 || idx % 10 === 6;
                         const media = post.media?.[0];
                         const isVideo = media?.media_type?.startsWith('video');
-                        const url = media?.view_link || media?.url;
+                        // Use thumbnail for grid, optimized fallback for raw display
+                        const url = media?.thumbnail_url || media?.view_link || media?.url;
 
                         return (
                             <div
@@ -163,7 +164,11 @@ const Explore = () => {
                                     <>
                                         {isVideo ? (
                                             <div className="w-full h-full relative">
-                                                <video src={url} className="w-full h-full object-cover" muted />
+                                                <img
+                                                    src={url}
+                                                    className="w-full h-full object-cover"
+                                                    alt=""
+                                                />
                                                 <div className="absolute top-2 right-2 p-1.5 bg-black/40 backdrop-blur-md rounded-lg text-white">
                                                     <svg className="size-4 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
                                                 </div>

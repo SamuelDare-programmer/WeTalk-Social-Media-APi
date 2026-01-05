@@ -4,6 +4,7 @@ import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 import { useVideo } from '../context/VideoContext';
+import VideoPlayer from './VideoPlayer';
 
 function cn(...inputs) {
     return twMerge(clsx(inputs));
@@ -66,7 +67,14 @@ const MediaRenderer = ({ media, postId, onDoubleTap, onClick, showImmersiveIcon 
 
     const currentMedia = media[currentIndex];
     const isVideo = currentMedia.media_type?.startsWith('video');
-    const displayUrl = getVideoUrl(currentMedia);
+    // Prefer HLS -> Optimized -> View Link (fixed)
+    const hlsUrl = currentMedia.hls_url;
+    const optimizedUrl = currentMedia.optimized_url || getVideoUrl(currentMedia);
+    const thumbUrl = currentMedia.thumbnail_url || currentMedia.view_link?.replace(/\.[^/.]+$/, ".jpg");
+
+    // For display, if it's video, we pass hlsUrl as src and optimizedUrl as fallback
+    const videoSrc = hlsUrl || optimizedUrl;
+    const displayUrl = isVideo ? videoSrc : getVideoUrl(currentMedia);
 
     useEffect(() => {
         if (isVideo && videoRef.current) {
@@ -86,7 +94,11 @@ const MediaRenderer = ({ media, postId, onDoubleTap, onClick, showImmersiveIcon 
                 { threshold: 0.5 } // 50% visibility threshold
             );
 
-            observer.observe(videoRef.current);
+            // Handle custom component ref exposing 'node'
+            const node = videoRef.current.node || videoRef.current;
+            if (node instanceof Element) {
+                observer.observe(node);
+            }
             return () => observer.disconnect();
         }
     }, [isVideo, isPlaying]);
@@ -107,14 +119,17 @@ const MediaRenderer = ({ media, postId, onDoubleTap, onClick, showImmersiveIcon 
         >
             {isVideo ? (
                 <div className="relative w-full h-full flex items-center justify-center" onClick={togglePlay} onDoubleClick={() => onDoubleTap?.()}>
-                    <video
+                    <VideoPlayer
                         ref={videoRef}
-                        src={displayUrl}
+                        src={videoSrc}
+                        fallbackSrc={optimizedUrl}
+                        poster={thumbUrl}
                         className="w-full h-full object-contain"
                         loop
                         playsInline
                         onPlay={() => setIsPlaying(true)}
                         onPause={() => setIsPlaying(false)}
+                        crossOrigin="anonymous"
                     />
 
                     {/* Video Controls */}

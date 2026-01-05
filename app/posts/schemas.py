@@ -18,6 +18,11 @@ class MediaResponse(BaseModel):
     media_id: str
     view_link: Optional[str] = None  # The public Google Drive view link
     media_type: Optional[str] = None # e.g. "image/jpeg"
+    hls_url: Optional[str] = None
+    optimized_url: Optional[str] = None
+    thumbnail_url: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
 
 class ImageUploadResponse(BaseModel):
     message: str

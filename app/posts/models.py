@@ -41,6 +41,27 @@ class Media(Document):
 
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     
+    @property
+    def hls_url(self) -> str:
+        if self.file_type == MediaType.VIDEO and self.public_id:
+            from app.core.media.cloudinary_utils import generate_hls_url
+            return generate_hls_url(self.public_id)
+        return ""
+
+    @property
+    def optimized_url(self) -> str:
+        if self.file_type == MediaType.VIDEO and self.public_id:
+            from app.core.media.cloudinary_utils import generate_optimized_mp4_url
+            return generate_optimized_mp4_url(self.public_id)
+        return self.view_link
+
+    @property
+    def thumbnail_url(self) -> str:
+        if self.file_type == MediaType.VIDEO and self.public_id:
+            from app.core.media.cloudinary_utils import generate_thumbnail_url
+            return generate_thumbnail_url(self.public_id)
+        return self.view_link
+
     class Settings:
         name = "media"
 
