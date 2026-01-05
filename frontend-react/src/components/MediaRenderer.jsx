@@ -102,7 +102,7 @@ const MediaRenderer = ({ media, postId, onDoubleTap, onClick, showImmersiveIcon 
 
     return (
         <div
-            className="relative group rounded-xl overflow-hidden bg-black aspect-square max-h-[600px] flex items-center justify-center cursor-pointer"
+            className="relative group rounded-xl overflow-hidden bg-black aspect-square max-h-[600px] flex items-center justify-center cursor-pointer mx-auto"
             onClick={onClick}
         >
             {isVideo ? (
@@ -136,7 +136,7 @@ const MediaRenderer = ({ media, postId, onDoubleTap, onClick, showImmersiveIcon 
                     </div>
                 </div>
             ) : (
-                <div className="relative w-full h-full" onDoubleClick={() => onDoubleTap?.()}>
+                <div className="relative w-full h-full flex items-center justify-center" onDoubleClick={() => onDoubleTap?.()}>
                     <img src={displayUrl} alt="Post content" className="w-full h-full object-contain" />
                 </div>
             )}

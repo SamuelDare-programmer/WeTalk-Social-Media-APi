@@ -155,8 +155,8 @@ const PostCard = ({ post, onLike, onComment, onShare, onBookmark, onDelete, onMe
             </div>
 
             {/* Media: Centered / Full Width */}
-            <div className="relative w-full bg-slate-50 dark:bg-black/20 flex justify-center border-y border-slate-100 dark:border-white/5">
-                <div className="w-full max-w-[650px]">
+            <div className="relative w-full bg-slate-50/50 dark:bg-black/20 flex items-center justify-center border-y border-slate-100 dark:border-white/5">
+                <div className="w-full max-w-[650px] mx-auto">
                     <MediaRenderer
                         media={post.media}
                         postId={post.id || post._id}
