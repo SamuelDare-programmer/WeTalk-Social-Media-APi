@@ -260,4 +260,61 @@ async def get_explore_feed(
             is_bookmarked=str(post.id) in bookmarked_set
         ) for post in posts
     ]
-    return results
+
+@router.get("/shorts", response_model=List[PostResponse])
+async def get_shorts_feed(
+    limit: int = Query(20, le=50),
+    offset: int = 0,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Shorts Feed: Discover video content from all users globally.
+    """
+    service = DiscoveryService()
+    engagement_service = EngagementService()
+    
+    posts = await service.get_global_videos_feed(str(current_user.id), limit, offset)
+    
+    if not posts:
+        return []
+
+    # Fetch authors
+    owner_ids = list({PydanticObjectId(post.owner_id) for post in posts if PydanticObjectId.is_valid(post.owner_id)})
+    users = await User.find(In(User.id, owner_ids)).to_list()
+    user_map = {str(u.id): u for u in users}
+    
+    def get_author_model(owner_id):
+        user = user_map.get(owner_id)
+        return UserPublicModel(**user.model_dump()) if user else None
+
+    # Fetch engagement status
+    post_ids = [str(p.id) for p in posts]
+    liked_ids, bookmarked_ids = await asyncio.gather(
+        engagement_service.get_liked_post_ids(str(current_user.id), post_ids),
+        engagement_service.get_bookmarked_post_ids(str(current_user.id), post_ids)
+    )
+    liked_set = set(liked_ids)
+    bookmarked_set = set(bookmarked_ids)
+
+    return [
+        PostResponse(
+            id=str(post.id),
+            owner_id=post.owner_id,
+            author=get_author_model(post.owner_id),
+            caption=post.caption,
+            media=[
+                {
+                    "media_id": str(media.id),
+                    "view_link": media.view_link,
+                    "media_type": media.media_type or (f"video/mp4" if media.file_type == "video" else "image/jpeg")
+                } for media in post.media
+            ] if post.media else [],
+            likes_count=post.likes_count,
+            comments_count=post.comments_count,
+            share_count=post.share_count,
+            created_at=post.created_at,
+            location=post.location,
+            is_liked=str(post.id) in liked_set,
+            is_bookmarked=str(post.id) in bookmarked_set
+        ) for post in posts
+    ]

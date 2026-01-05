@@ -336,34 +336,8 @@ const Shorts = () => {
     useEffect(() => {
         const fetchShorts = async () => {
             try {
-                // Try fetching timeline first
-                const res = await axios.get('/feed/timeline?limit=20');
-                let videoPosts = res.data.filter(p =>
-                    p.media?.some(m => m.media_type?.startsWith('video'))
-                );
-
-                // Fallback to discovery if timeline is empty
-                if (videoPosts.length === 0) {
-                    const exploreRes = await axios.get('/discovery/explore?type=video&limit=20');
-                    videoPosts = exploreRes.data;
-                }
-
-                // Randomize for fresh experience but deduplicate
-                const uniquePosts = [];
-                const seenIds = new Set();
-
-                // Sort by date descending to show newer videos first
-                const sortedVideos = [...videoPosts].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-                sortedVideos.forEach(p => {
-                    const pid = p.id || p._id;
-                    if (!seenIds.has(pid)) {
-                        seenIds.add(pid);
-                        uniquePosts.push(p);
-                    }
-                });
-
-                setPosts(uniquePosts);
+                const res = await axios.get('/discovery/shorts?limit=20');
+                setPosts(res.data);
             } catch (err) {
                 console.error('Failed to fetch shorts', err);
             } finally {

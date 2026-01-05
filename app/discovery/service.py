@@ -222,6 +222,38 @@ class DiscoveryService:
         
         return posts
 
+    async def get_global_videos_feed(self, current_user_id: str, limit: int = 20, offset: int = 0) -> List[Post]:
+        """
+        Retrieves all video posts globally, respecting user blocks.
+        Unlike explore, it does NOT exclude followed users.
+        """
+        # 1. Get Blocked IDs
+        blocked_records = await UserBlocks.find({
+            "$or": [
+                {"blocker_id": current_user_id},
+                {"blocked_id": current_user_id}
+            ]
+        }).to_list()
+        
+        excluded_user_ids = {current_user_id}
+        excluded_user_ids.update(r.blocker_id for r in blocked_records)
+        excluded_user_ids.update(r.blocked_id for r in blocked_records)
+
+        # 2. Query Posts with Video Media
+        # We fetch more and filter in memory to ensure we have enough results,
+        # since video filtering over Beanie links is easier in Python than aggregation right now.
+        query = {"owner_id": {"$nin": list(excluded_user_ids)}}
+        
+        # Sort by creation date descending to keep feed fresh
+        all_posts = await Post.find(
+            query,
+            fetch_links=True
+        ).sort("-created_at").skip(offset).limit(limit * 5).to_list()
+        
+        video_posts = [p for p in all_posts if p.media and any(m.file_type == "video" for m in p.media)]
+        
+        return video_posts[:limit]
+
     # Helper to process tags when a post is created (to be called by PostService ideally)
     async def process_post_tags(self, post_id: str, tags: List[str]):
         for tag_name in tags:
