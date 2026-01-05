@@ -257,8 +257,13 @@ class DiscoveryService:
                 }
             },
             
-            # Filter for video content
-            {"$match": {"media_docs.file_type": "video"}},
+            # Filter for video content (explicit video type OR cloudinary video path)
+            {"$match": {
+                "$or": [
+                    {"media_docs.file_type": "video"},
+                    {"media_docs.view_link": {"$regex": "/video/upload/"}}
+                ]
+            }},
             
             # Randomize (User wants a "modern" random feed)
             {"$sample": {"size": limit}} 
