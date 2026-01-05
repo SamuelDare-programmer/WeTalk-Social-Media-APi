@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Image as ImageIcon, X, MapPin, Tag, Smile, Loader2, Search, Plus } from 'lucide-react';
+import { Image as ImageIcon, X, MapPin, Tag, Smile, Loader2, Search, Plus, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from '../api/axios';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,6 +19,7 @@ const CreatePost = () => {
     const [isCustomLocationMode, setIsCustomLocationMode] = useState(false);
     const [customLocation, setCustomLocation] = useState({ name: '', city: '', state: '', country: '' });
     const [shake, setShake] = useState(false);
+    const [fileError, setFileError] = useState(null);
     const navigate = useNavigate();
 
     // Load recent locations on mount
@@ -74,8 +75,9 @@ const CreatePost = () => {
 
             if (invalidFiles.length > 0) {
                 setShake(true);
+                setFileError(`Files too large (max 30MB):\n${invalidFiles.join(', ')}`);
                 setTimeout(() => setShake(false), 500);
-                alert(`The following files are too large (max 30MB):\n${invalidFiles.join('\n')}`);
+                setTimeout(() => setFileError(null), 5000); // Auto-hide after 5s
             }
 
             if (validFiles.length > 0) {
@@ -223,6 +225,31 @@ const CreatePost = () => {
                     animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
                 }
             `}</style>
+
+            {/* Glassmorphism Error Toast */}
+            <AnimatePresence>
+                {fileError && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -20, x: '-50%' }}
+                        animate={{ opacity: 1, y: 0, x: '-50%' }}
+                        exit={{ opacity: 0, y: -20, x: '-50%' }}
+                        className="fixed top-6 left-1/2 z-[60]"
+                    >
+                        <div className="backdrop-blur-xl bg-white/60 dark:bg-black/60 border border-white/40 dark:border-white/10 shadow-2xl rounded-2xl px-6 py-4 flex items-center gap-4 min-w-[320px] max-w-md">
+                            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-red-100/50 dark:bg-red-900/30 shadow-inner">
+                                <AlertCircle className="size-6 text-red-600 dark:text-red-400" />
+                            </div>
+                            <div className="flex-1">
+                                <h4 className="font-bold text-sm text-gray-900 dark:text-white font-display">Upload Blocked</h4>
+                                <p className="text-xs text-gray-700 dark:text-gray-300 font-medium mt-0.5 whitespace-pre-wrap">{fileError}</p>
+                            </div>
+                            <button onClick={() => setFileError(null)} className="p-1 hover:bg-black/5 dark:hover:bg-white/5 rounded-full">
+                                <X className="size-4 text-slate-400" />
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             <div className={`bg-white dark:bg-surface-dark border border-slate-200 dark:border-border-dark rounded-3xl overflow-hidden shadow-sm flex flex-col md:flex-row min-h-[500px] ${shake ? 'animate-shake' : ''}`}>
                 {/* Media Upload Area */}
