@@ -251,7 +251,7 @@ class DiscoveryService:
             {
                 "$lookup": {
                     "from": "media",
-                    "localField": "media.id", # Try standard beanie relational field
+                    "localField": "media.$id", # Beanie stores Links as DBRefs ({$ref: "media", $id: ObjectId})
                     "foreignField": "_id",
                     "as": "media_docs"
                 }
