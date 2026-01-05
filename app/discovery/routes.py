@@ -121,34 +121,57 @@ async def get_posts_by_tag(
     tag_name: str,
     limit: int = Query(20, le=50),
     offset: int = 0,
-    type: Optional[str] = Query(None, pattern="^(image|video)$")
+    type: Optional[str] = Query(None, pattern="^(image|video)$"),
+    current_user: User = Depends(get_current_user)
 ):
     service = DiscoveryService()
+    engagement_service = EngagementService()
+    
     posts = await service.get_posts_by_hashtag(tag_name, limit, offset, media_type=type)
     
-    # Basic mapping to PostResponse
-    results = []
-    for p in posts:
-        results.append(PostResponse(
-            id=str(p.id),
-            owner_id=p.owner_id,
-            caption=p.caption,
+    if not posts:
+        return []
+
+    # Fetch authors
+    owner_ids = list({PydanticObjectId(post.owner_id) for post in posts if PydanticObjectId.is_valid(post.owner_id)})
+    users = await User.find(In(User.id, owner_ids)).to_list()
+    user_map = {str(u.id): u for u in users}
+    
+    def get_author_model(owner_id):
+        user = user_map.get(owner_id)
+        return UserPublicModel(**user.model_dump()) if user else None
+
+    # Fetch engagement status
+    post_ids = [str(p.id) for p in posts]
+    liked_ids, bookmarked_ids = await asyncio.gather(
+        engagement_service.get_liked_post_ids(str(current_user.id), post_ids),
+        engagement_service.get_bookmarked_post_ids(str(current_user.id), post_ids)
+    )
+    liked_set = set(liked_ids)
+    bookmarked_set = set(bookmarked_ids)
+
+    return [
+        PostResponse(
+            id=str(post.id),
+            owner_id=post.owner_id,
+            author=get_author_model(post.owner_id),
+            caption=post.caption,
             media=[
                 {
-                    "media_id": str(m.id),
-                    "view_link": m.view_link,
-                    "media_type": m.media_type or (f"video/mp4" if m.file_type == "video" else "image/jpeg")
-                } for m in p.media
-            ] if p.media else [],
-            likes_count=p.likes_count,
-            comments_count=p.comments_count,
-            share_count=p.share_count,
-            created_at=p.created_at,
-            # Note: is_liked/is_bookmarked are False here as we aren't passing current_user context yet
-            # To fix, we would inject EngagementService logic here similar to feed/routes.py
-            location=p.location
-        ))
-    return results
+                    "media_id": str(media.id),
+                    "view_link": media.view_link,
+                    "media_type": media.media_type or (f"video/mp4" if media.file_type == "video" else "image/jpeg")
+                } for media in post.media
+            ] if post.media else [],
+            likes_count=post.likes_count,
+            comments_count=post.comments_count,
+            share_count=post.share_count,
+            created_at=post.created_at,
+            location=post.location,
+            is_liked=str(post.id) in liked_set,
+            is_bookmarked=str(post.id) in bookmarked_set
+        ) for post in posts
+    ]
 
 @router.get("/geocode/reverse")
 async def reverse_geocode(lat: float, lng: float):
@@ -191,27 +214,49 @@ async def get_explore_feed(
     """
     Explore Feed: Discover engaging content from users you don't follow.
     """
-    service = DiscoveryService()
+    engagement_service = EngagementService()
+    
     posts = await service.get_explore_feed(str(current_user.id), limit, offset, media_type=type)
     
-    # Map to PostResponse
-    results = []
-    for p in posts:
-        results.append(PostResponse(
-            id=str(p.id),
-            owner_id=p.owner_id,
-            caption=p.caption,
+    if not posts:
+        return []
+    # Fetch authors
+    owner_ids = list({PydanticObjectId(post.owner_id) for post in posts if PydanticObjectId.is_valid(post.owner_id)})
+    users = await User.find(In(User.id, owner_ids)).to_list()
+    user_map = {str(u.id): u for u in users}
+    
+    def get_author_model(owner_id):
+        user = user_map.get(owner_id)
+        return UserPublicModel(**user.model_dump()) if user else None
+
+    # Fetch engagement status
+    post_ids = [str(p.id) for p in posts]
+    liked_ids, bookmarked_ids = await asyncio.gather(
+        engagement_service.get_liked_post_ids(str(current_user.id), post_ids),
+        engagement_service.get_bookmarked_post_ids(str(current_user.id), post_ids)
+    )
+    liked_set = set(liked_ids)
+    bookmarked_set = set(bookmarked_ids)
+    return [
+        PostResponse(
+            id=str(post.id),
+            owner_id=post.owner_id,
+            author=get_author_model(post.owner_id),
+            caption=post.caption,
             media=[
                 {
-                    "media_id": str(m.id),
-                    "view_link": m.view_link,
-                    "media_type": m.media_type or (f"video/mp4" if m.file_type == "video" else "image/jpeg")
-                } for m in p.media
-            ] if p.media else [],
-            likes_count=p.likes_count,
-            comments_count=p.comments_count,
-            share_count=p.share_count,
-            created_at=p.created_at,
-            location=p.location
-        ))
+                    "media_id": str(media.id),
+                    "view_link": media.view_link,
+                    "media_type": media.media_type or (f"video/mp4" if media.file_type == "video" else "image/jpeg")
+                } for media in post.media
+            ] if post.media else [],
+            likes_count=post.likes_count,
+            comments_count=post.comments_count,
+            share_count=post.share_count,
+            created_at=post.created_at,
+            location=post.location,
+            is_liked=str(post.id) in liked_set,
+            is_bookmarked=str(post.id) in bookmarked_set
+        ) for post in posts
+    ]
     return results
