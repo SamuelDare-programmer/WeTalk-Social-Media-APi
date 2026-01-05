@@ -160,7 +160,9 @@ const ShortCard = ({ post, isActive, onComment }) => {
 
     // Fix: Cloudinary might return .jpg for video URLs if they were used as thumbnails elsewhere.
     // We force .mp4 for the video player and .jpg for the blurred background optimization.
-    const url = baseVideoUrl?.replace(/\.[^/.]+$/, ".mp4");
+    // Force .mp4 for the video player (especially if Cloudinary returned a .jpg thumbnail URL)
+    // Aggressively replace common image extensions with .mp4
+    const url = baseVideoUrl?.replace(/\.(jpg|jpeg|png|webp)$/i, ".mp4").replace(/\.[^/.]+$/, ".mp4");
     const thumbnailUrl = baseVideoUrl?.replace(/\.[^/.]+$/, ".jpg");
 
     return (

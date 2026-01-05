@@ -5,6 +5,7 @@ from beanie import PydanticObjectId
 from typing import List, Dict, Any, Optional
 import httpx
 import asyncio
+import random
 from app.core.config import settings
 
 class DiscoveryService:
@@ -224,8 +225,7 @@ class DiscoveryService:
 
     async def get_global_videos_feed(self, current_user_id: str, limit: int = 20, offset: int = 0) -> List[Post]:
         """
-        Retrieves all video posts globally, respecting user blocks.
-        Unlike explore, it does NOT exclude followed users.
+        Retrieves all video posts globally using aggregation for efficient filtering.
         """
         # 1. Get Blocked IDs
         blocked_records = await UserBlocks.find({
@@ -239,20 +239,51 @@ class DiscoveryService:
         excluded_user_ids.update(r.blocker_id for r in blocked_records)
         excluded_user_ids.update(r.blocked_id for r in blocked_records)
 
-        # 2. Query Posts with Video Media
-        # We fetch more and filter in memory to ensure we have enough results,
-        # since video filtering over Beanie links is easier in Python than aggregation right now.
-        query = {"owner_id": {"$nin": list(excluded_user_ids)}}
+        # 2. Aggregation Pipeline to find Posts that HAVE video media
+        pipeline = [
+            # Filter out blocked authors
+            {"$match": {"owner_id": {"$nin": list(excluded_user_ids)}}},
+            
+            # Lookup media to check file_type
+            # detailed info: Beanie stores Link as DBRef usually, but we need to check how it is stored.
+            # Assuming standard reference or list of IDs. 
+            # If Beanie uses simple links, $lookup works on the ID list.
+            {
+                "$lookup": {
+                    "from": "media",
+                    "localField": "media.id", # Try standard beanie relational field
+                    "foreignField": "_id",
+                    "as": "media_docs"
+                }
+            },
+            
+            # Filter for video content
+            {"$match": {"media_docs.file_type": "video"}},
+            
+            # Randomize (User wants a "modern" random feed)
+            {"$sample": {"size": limit}} 
+        ]
         
-        # Sort by creation date descending to keep feed fresh
-        all_posts = await Post.find(
-            query,
+        # Execute Aggregation
+        # We only need the _id to fetch the full document with links afterwards
+        # This is safer than converting aggregation result back to Beanie Document manually
+        aggregation_result = await Post.find_many({}).aggregate(pipeline).to_list()
+        
+        found_ids = [doc["_id"] for doc in aggregation_result]
+        
+        if not found_ids:
+            return []
+
+        # 3. Fetch full documents conformant with the rest of the app (relations loaded)
+        posts = await Post.find(
+            {"_id": {"$in": found_ids}},
             fetch_links=True
-        ).sort("-created_at").skip(offset).limit(limit * 5).to_list()
+        ).to_list()
         
-        video_posts = [p for p in all_posts if p.media and any(m.file_type == "video" for m in p.media)]
+        # Since $sample order is lost in the $in query, we shuffle again to ensure random order
+        random.shuffle(posts)
         
-        return video_posts[:limit]
+        return posts
 
     # Helper to process tags when a post is created (to be called by PostService ideally)
     async def process_post_tags(self, post_id: str, tags: List[str]):
