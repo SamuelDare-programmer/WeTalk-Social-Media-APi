@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Heart, MessageCircle, Share2, Bookmark, Send, MoreHorizontal, Maximize2, ChevronLeft, ChevronRight, Volume2, VolumeX } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import axios from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import MediaRenderer from './MediaRenderer';
@@ -18,6 +19,7 @@ const PostDetailModal = ({ post, onClose, onLike, onBookmark }) => {
     const [isBookmarked, setIsBookmarked] = useState(post.is_bookmarked);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [activeIndex, setActiveIndex] = useState(0);
+    const navigate = useNavigate();
 
     const postId = post.id || post._id;
     const author = post.author || post.user || {};
@@ -167,14 +169,15 @@ const PostDetailModal = ({ post, onClose, onLike, onBookmark }) => {
                         <div className="flex items-center gap-3">
                             <img
                                 src={avatarUrl}
-                                className="size-10 rounded-full border border-slate-200 dark:border-slate-700"
+                                className="size-10 rounded-full border border-slate-200 dark:border-slate-700 cursor-pointer"
                                 alt=""
+                                onClick={() => { onClose(); navigate(`/profile/${username}`); }}
                             />
-                            <div>
-                                <h4 className="font-bold text-slate-900 dark:text-white text-sm hover:underline cursor-pointer">
+                            <div onClick={() => { onClose(); navigate(`/profile/${username}`); }} className="cursor-pointer">
+                                <h4 className="font-bold text-slate-900 dark:text-white text-sm hover:underline">
                                     {username}
                                 </h4>
-                                <p className="text-xs text-slate-500">{author.bio?.substring(0, 30) || 'Verified User'}</p>
+                                <p className="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">{author.bio?.substring(0, 30) || 'Verified User'}</p>
                             </div>
                         </div>
                         <button className="text-slate-400 hover:text-slate-900 dark:hover:text-white">
@@ -210,7 +213,12 @@ const PostDetailModal = ({ post, onClose, onLike, onBookmark }) => {
                                         />
                                         <div className="flex-1">
                                             <div className="text-sm">
-                                                <span className="font-bold mr-2 text-slate-900 dark:text-white">{comment.author?.username}</span>
+                                                <span
+                                                    className="font-bold mr-2 text-slate-900 dark:text-white hover:underline cursor-pointer"
+                                                    onClick={() => { onClose(); navigate(`/profile/${comment.author?.username}`); }}
+                                                >
+                                                    {comment.author?.username}
+                                                </span>
                                                 <span className="text-slate-700 dark:text-slate-300">{comment.content}</span>
                                             </div>
                                             <div className="flex items-center gap-3 mt-1 text-xs text-slate-400 font-semibold">
