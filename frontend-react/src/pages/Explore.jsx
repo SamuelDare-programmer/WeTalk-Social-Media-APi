@@ -6,75 +6,61 @@ import PostDetailModal from '../components/PostDetailModal';
 import { AnimatePresence } from 'framer-motion';
 
 const Explore = () => {
-    const [posts, setPosts] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [activeCategory, setActiveCategory] = useState('All');
     const [selectedPost, setSelectedPost] = useState(null);
-    const navigate = useNavigate();
     const location = useLocation();
 
-    const categories = ['All', 'Pictures', 'Videos', 'Places'];
-    const [isPlaceSearch, setIsPlaceSearch] = useState(false);
-
+    // Parse Query Params
     useEffect(() => {
-        const fetchExplore = async () => {
-            const params = new URLSearchParams(window.location.search);
-            const queryParam = params.get('query');
-            const typeParam = params.get('type');
-            const catParam = params.get('cat');
+        const params = new URLSearchParams(window.location.search);
+        const queryParam = params.get('query');
+        const catParam = params.get('cat');
+        if (queryParam) setSearchQuery(queryParam);
+        if (catParam && categories.includes(catParam)) setActiveCategory(catParam);
+    }, [location.search]);
 
-            if (queryParam) setSearchQuery(queryParam);
-            if (catParam && categories.includes(catParam)) setActiveCategory(catParam);
 
-            setLoading(true);
-            try {
-                let endpoint = '/discovery/explore?limit=30';
-                const currentCat = catParam || activeCategory;
+    const fetchExplore = useCallback(async (offset, limit) => {
+        let endpoint = `/discovery/explore?limit=${limit}&offset=${offset}`;
 
-                if (!queryParam) {
-                    if (currentCat === 'Pictures') endpoint += '&type=image';
-                    else if (currentCat === 'Videos') endpoint += '&type=video';
-                }
-
-                // Handle Explicit Location View
-                if (typeParam === 'location' && queryParam) {
-                    endpoint = `/discovery/places/${queryParam}?limit=30`;
-                    setIsPlaceSearch(false);
-                }
-                // Handle Search
-                else if (queryParam) {
-                    if (queryParam.startsWith('#')) {
-                        endpoint = `/discovery/tags/${queryParam.replace('#', '')}?limit=30`;
-                        setIsPlaceSearch(false);
-                    } else if (currentCat === 'Places') {
-                        endpoint = `/discovery/search?q=${encodeURIComponent(queryParam)}&type=place&limit=30`;
-                        setIsPlaceSearch(true);
-                    } else {
-                        endpoint = `/discovery/search?q=${encodeURIComponent(queryParam)}&type=user&limit=30`;
-                        setIsPlaceSearch(false);
-                    }
-                }
-                // Default Explore or Category (Category filter not implemented in backend yet, so using explore)
-                else {
-                    setIsPlaceSearch(false);
-                }
-
-                const res = await axios.get(endpoint);
-
-                let data = res.data;
-                if (!queryParam && Array.isArray(data)) {
-                    data = data.filter(post => post.media && post.media.length > 0);
-                }
-                setPosts(data);
-            } catch (err) {
-                console.error('Failed to fetch explore content', err);
-            } finally {
-                setLoading(false);
+        // Dynamic Endpoint Construction
+        if (isPlaceSearch && searchQuery) {
+            endpoint = `/discovery/search?q=${encodeURIComponent(searchQuery)}&type=place&limit=${limit}`;
+            // Search usually doesn't stick to strict offset unless supported. 
+            // We'll trust the hook to handle what it gets.
+        }
+        else if (searchQuery) {
+            if (searchQuery.startsWith('#')) {
+                endpoint = `/discovery/tags/${searchQuery.replace('#', '')}?limit=${limit}&offset=${offset}`;
+            } else {
+                endpoint = `/discovery/search?q=${encodeURIComponent(searchQuery)}&type=user&limit=${limit}`;
             }
-        };
-        fetchExplore();
-    }, [location.search, activeCategory]);
+        }
+        else {
+            // Category Filters
+            if (activeCategory === 'Pictures') endpoint += '&type=image';
+            else if (activeCategory === 'Videos') endpoint += '&type=video';
+            // For simplicity, 'All' goes to default explore.
+        }
+
+        const res = await axios.get(endpoint);
+        let data = res.data;
+        if (!searchQuery && Array.isArray(data)) {
+            data = data.filter(post => post.media && post.media.length > 0);
+        }
+        return data;
+    }, [searchQuery, activeCategory, isPlaceSearch]);
+
+    const {
+        items: posts,
+        loading,
+        lastElementRef,
+        reset
+    } = useInfiniteScroll(fetchExplore, { limit: 30 });
+
+    // Reset list when filters change
+    useEffect(() => {
+        reset();
+    }, [searchQuery, activeCategory, reset]);
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -148,6 +134,7 @@ const Explore = () => {
                     {posts.map((post, idx) => {
                         const postId = post.id || post._id;
                         const isLarge = idx % 10 === 0 || idx % 10 === 6;
+                        const isLast = posts.length === idx + 1;
                         const media = post.media?.[0];
                         const isVideo = media?.media_type?.startsWith('video');
                         // Use thumbnail for grid, optimized fallback for raw display
@@ -156,6 +143,7 @@ const Explore = () => {
                         return (
                             <div
                                 key={postId}
+                                ref={isLast ? lastElementRef : null}
                                 className={`relative group overflow-hidden cursor-pointer sm:rounded-xl transition-all hover:z-10 ${isLarge ? 'md:row-span-2 md:col-span-1' : ''
                                     } ${!url ? 'aspect-square bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500' : 'bg-slate-100 dark:bg-white/5 shadow-sm'}`}
                                 onClick={() => setSelectedPost(post)}

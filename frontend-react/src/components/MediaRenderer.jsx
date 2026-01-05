@@ -101,7 +101,7 @@ const MediaRenderer = ({ media, postId, onDoubleTap, onClick, showImmersiveIcon 
             }
             return () => observer.disconnect();
         }
-    }, [isVideo, isPlaying]);
+    }, [isVideo, isPlaying, currentIndex]); // Add currentIndex to ensure re-observe on slide change
 
     useEffect(() => {
         if (isVideo && videoRef.current) {
@@ -110,7 +110,7 @@ const MediaRenderer = ({ media, postId, onDoubleTap, onClick, showImmersiveIcon 
                 setIsPlaying(false);
             }
         }
-    }, [activeVideoId, postId, isPlaying, isVideo, forcePause]);
+    }, [activeVideoId, postId, isPlaying, isVideo, forcePause, currentIndex]);
 
     return (
         <div
@@ -120,6 +120,7 @@ const MediaRenderer = ({ media, postId, onDoubleTap, onClick, showImmersiveIcon 
             {isVideo ? (
                 <div className="relative w-full h-full flex items-center justify-center" onClick={togglePlay} onDoubleClick={() => onDoubleTap?.()}>
                     <VideoPlayer
+                        key={videoSrc} // Force a fresh component instance when source changes
                         ref={videoRef}
                         src={videoSrc}
                         fallbackSrc={optimizedUrl}

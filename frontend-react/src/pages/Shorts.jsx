@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import PostDetailModal from '../components/PostDetailModal';
 import VideoPlayer from '../components/VideoPlayer';
+import useInfiniteScroll from '../hooks/useInfiniteScroll';
 
 const ShortCard = ({ post, mediaItem, isActive, onComment }) => {
     const videoRef = useRef(null);
@@ -328,47 +329,32 @@ const ShortCard = ({ post, mediaItem, isActive, onComment }) => {
 const Shorts = () => {
     const navigate = useNavigate();
     const { isMuted, setIsMuted, toggleMute } = useVideo();
-    const [feedItems, setFeedItems] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [activeIndex, setActiveIndex] = useState(0);
-    const [selectedPost, setSelectedPost] = useState(null);
-    const containerRef = useRef(null);
+    const fetchShorts = useCallback(async (offset, limit) => {
+        const res = await axios.get(`/discovery/shorts?limit=${limit}&offset=${offset}`);
 
-    // Unmute on mount for Shorts experience
-    useEffect(() => {
-        setIsMuted(false);
-    }, [setIsMuted]);
+        // Explode Logic: Create a unique feed item for EVERY video in a post
+        const explodedItems = res.data.flatMap(post => {
+            // Filter for videos (checking both type and URL as fallback)
+            const videos = post.media?.filter(m =>
+                (m.media_type && m.media_type.startsWith('video')) ||
+                (m.view_link && m.view_link.includes('/video/upload/')) ||
+                (m.media_type === 'video') // Extra safety
+            ) || [];
 
-    useEffect(() => {
-        const fetchShorts = async () => {
-            try {
-                const res = await axios.get('/discovery/shorts?limit=20');
-
-                // Explode Logic: Create a unique feed item for EVERY video in a post
-                const explodedItems = res.data.flatMap(post => {
-                    // Filter for videos (checking both type and URL as fallback)
-                    const videos = post.media?.filter(m =>
-                        (m.media_type && m.media_type.startsWith('video')) ||
-                        (m.view_link && m.view_link.includes('/video/upload/')) ||
-                        (m.media_type === 'video') // Extra safety
-                    ) || [];
-
-                    return videos.map((video, idx) => ({
-                        _feedId: `${post.id || post._id}_${video.media_id || video._id || idx}`,
-                        post: post,
-                        mediaItem: video
-                    }));
-                });
-
-                setFeedItems(explodedItems);
-            } catch (err) {
-                console.error('Failed to fetch shorts', err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchShorts();
+            return videos.map((video, idx) => ({
+                _feedId: `${post.id || post._id}_${video.media_id || video._id || idx}`,
+                post: post,
+                mediaItem: video
+            }));
+        });
+        return explodedItems;
     }, []);
+
+    const {
+        items: feedItems,
+        loading,
+        lastElementRef,
+    } = useInfiniteScroll(fetchShorts, { limit: 10 });
 
     const handleScroll = () => {
         if (!containerRef.current) return;
@@ -400,15 +386,19 @@ const Shorts = () => {
                 className="h-full w-full overflow-y-scroll snap-y snap-mandatory hide-scrollbar scroll-smooth"
             >
                 {feedItems.length > 0 ? (
-                    feedItems.map((item, idx) => (
-                        <ShortCard
-                            key={item._feedId}
-                            post={item.post}
-                            mediaItem={item.mediaItem}
-                            isActive={idx === activeIndex}
-                            onComment={() => setSelectedPost(item.post)}
-                        />
-                    ))
+                    feedItems.map((item, idx) => {
+                        const isLast = feedItems.length === idx + 1;
+                        return (
+                            <div key={item._feedId} ref={isLast ? lastElementRef : null} className="h-full snap-start">
+                                <ShortCard
+                                    post={item.post}
+                                    mediaItem={item.mediaItem}
+                                    isActive={idx === activeIndex}
+                                    onComment={() => setSelectedPost(item.post)}
+                                />
+                            </div>
+                        );
+                    })
                 ) : (
                     <div className="h-full flex items-center justify-center text-white/50">
                         No video content found.
