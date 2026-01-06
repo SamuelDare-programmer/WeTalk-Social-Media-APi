@@ -9,7 +9,10 @@ const Explore = () => {
     const [selectedPost, setSelectedPost] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [activeCategory, setActiveCategory] = useState('All');
+    const [isPlaceSearch, setIsPlaceSearch] = useState(false);
     const location = useLocation();
+
+    const categories = ['All', 'Pictures', 'Videos', 'Places'];
 
     // Parse Query Params
     useEffect(() => {

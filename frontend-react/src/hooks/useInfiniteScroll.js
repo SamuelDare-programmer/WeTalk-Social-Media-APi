@@ -58,10 +58,13 @@ const useInfiniteScroll = (fetchFunction, options = {}) => {
         }
     }, [fetchFunction, limit, offset, hasMore, loading, deduplicate]);
 
-    // Initial Load
+    // Initial Load - Guard against infinite loops
     useEffect(() => {
-        loadMore();
-    }, [loadMore]);
+        if (offset === 0 && !loading) {
+            loadMore();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Run only on mount to trigger the first fetch. Subsequent fetches are manual or observer-triggered.
 
     // Utility to completely reset the list (e.g., when search query changes)
     const reset = useCallback(() => {
