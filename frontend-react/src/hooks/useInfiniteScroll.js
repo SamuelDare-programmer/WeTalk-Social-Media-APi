@@ -20,7 +20,6 @@ const useInfiniteScroll = (fetchFunction, options = {}) => {
 
         try {
             const currentOffset = reset ? 0 : offset;
-            const currentOffset = reset ? 0 : offset;
             const result = await fetchFunction(currentOffset, limit);
 
             const newItems = Array.isArray(result) ? result : result.items;
