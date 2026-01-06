@@ -41,7 +41,9 @@ const Explore = () => {
         let endpoint = `/discovery/explore?limit=${limit}&offset=${offset}`;
 
         // Case 1: Specific Location Feed (Posts)
-        if (isLocationFeed && debouncedSearchQuery) {
+        // We ensure debouncedSearchQuery matches the URL query to prevent typing from triggering this
+        const urlQuery = new URLSearchParams(window.location.search).get('query');
+        if (isLocationFeed && debouncedSearchQuery && debouncedSearchQuery === urlQuery) {
             endpoint = `/discovery/places/${debouncedSearchQuery}?limit=${limit}&offset=${offset}`;
         }
         // Case 2: Places Search (List of Places)

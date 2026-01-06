@@ -513,7 +513,13 @@ class DiscoveryService:
 
     async def get_posts_by_location(self, location_id: str, limit: int = 20, offset: int = 0) -> List[Post]:
         # 1. Verify Location
-        location = await Location.get(PydanticObjectId(location_id))
+        try:
+            if not PydanticObjectId.is_valid(location_id):
+                 return []
+            location = await Location.get(PydanticObjectId(location_id))
+        except Exception:
+             return []
+             
         if not location:
             return []
         
