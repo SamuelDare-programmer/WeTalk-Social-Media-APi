@@ -5,10 +5,12 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import PostDetailModal from '../components/PostDetailModal';
 import { AnimatePresence } from 'framer-motion';
 import useInfiniteScroll from '../hooks/useInfiniteScroll';
+import useDebounce from '../hooks/useDebounce';
 
 const Explore = () => {
     const [selectedPost, setSelectedPost] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const debouncedSearchQuery = useDebounce(searchQuery, 500);
     const [activeCategory, setActiveCategory] = useState('All');
     const [isPlaceSearch, setIsPlaceSearch] = useState(false);
     const location = useLocation();
@@ -29,33 +31,30 @@ const Explore = () => {
     const fetchExplore = useCallback(async (offset, limit) => {
         let endpoint = `/discovery/explore?limit=${limit}&offset=${offset}`;
 
-        // Dynamic Endpoint Construction
-        if (isPlaceSearch && searchQuery) {
-            endpoint = `/discovery/search?q=${encodeURIComponent(searchQuery)}&type=place&limit=${limit}&offset=${offset}`;
-            // Search usually doesn't stick to strict offset unless supported. 
-            // We'll trust the hook to handle what it gets.
+        // Dynamic Endpoint Construction using debounced value
+        if (isPlaceSearch && debouncedSearchQuery) {
+            endpoint = `/discovery/search?q=${encodeURIComponent(debouncedSearchQuery)}&type=place&limit=${limit}&offset=${offset}`;
         }
-        else if (searchQuery) {
-            if (searchQuery.startsWith('#')) {
-                endpoint = `/discovery/tags/${searchQuery.replace('#', '')}?limit=${limit}&offset=${offset}`;
+        else if (debouncedSearchQuery) {
+            if (debouncedSearchQuery.startsWith('#')) {
+                endpoint = `/discovery/tags/${debouncedSearchQuery.replace('#', '')}?limit=${limit}&offset=${offset}`;
             } else {
-                endpoint = `/discovery/search?q=${encodeURIComponent(searchQuery)}&type=user&limit=${limit}&offset=${offset}`;
+                endpoint = `/discovery/search?q=${encodeURIComponent(debouncedSearchQuery)}&type=user&limit=${limit}&offset=${offset}`;
             }
         }
         else {
             // Category Filters
             if (activeCategory === 'Pictures') endpoint += '&type=image';
             else if (activeCategory === 'Videos') endpoint += '&type=video';
-            // For simplicity, 'All' goes to default explore.
         }
 
         const res = await axios.get(endpoint);
         let data = res.data;
-        if (!searchQuery && Array.isArray(data)) {
+        if (!debouncedSearchQuery && Array.isArray(data)) {
             data = data.filter(post => post.media && post.media.length > 0);
         }
         return data;
-    }, [searchQuery, activeCategory, isPlaceSearch]);
+    }, [debouncedSearchQuery, activeCategory, isPlaceSearch]);
 
     const {
         items: posts,
@@ -73,7 +72,7 @@ const Explore = () => {
             return;
         }
         reset();
-    }, [searchQuery, activeCategory, reset]);
+    }, [debouncedSearchQuery, activeCategory, reset]);
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">

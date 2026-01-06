@@ -7,6 +7,8 @@ import httpx
 import asyncio
 import random
 from app.core.config import settings
+import re
+import logging
 
 class DiscoveryService:
     async def get_trending_hashtags(self, limit: int = 10) -> List[Hashtag]:
@@ -14,7 +16,8 @@ class DiscoveryService:
 
     async def search_hashtags(self, query: str, limit: int = 10) -> List[Hashtag]:
         # Regex search for autocomplete (Match from start)
-        return await Hashtag.find({"name": {"$regex": f"^{query}", "$options": "i"}}).limit(limit).to_list()
+        safe_query = re.escape(query)
+        return await Hashtag.find({"name": {"$regex": f"^{safe_query}", "$options": "i"}}).limit(limit).to_list()
 
     async def search_locations(self, query: str, limit: int = 20, lat: Optional[float] = None, lng: Optional[float] = None) -> List[Location]:
         query = query.strip()
@@ -23,7 +26,8 @@ class DiscoveryService:
         
         # 1. Search Local DB first
         # (Optional: Use geospatial query if lat/lng provided, but regex is fine for now)
-        local_results = await Location.find({"name": {"$regex": query, "$options": "i"}}).limit(limit).to_list()
+        safe_query = re.escape(query)
+        local_results = await Location.find({"name": {"$regex": safe_query, "$options": "i"}}).limit(limit).to_list()
         
         # If we have enough local results, return them to save API calls
         if len(local_results) >= 5:
@@ -79,7 +83,8 @@ class DiscoveryService:
             return []
 
         # 1. Search Users (Username or Name)
-        regex_pattern = {"$regex": query, "$options": "i"}
+        safe_query = re.escape(query)
+        regex_pattern = {"$regex": safe_query, "$options": "i"}
         users = await User.find({
             "$or": [
                 {"username": regex_pattern},
