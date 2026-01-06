@@ -329,6 +329,9 @@ const ShortCard = ({ post, mediaItem, isActive, onComment }) => {
 const Shorts = () => {
     const navigate = useNavigate();
     const { isMuted, setIsMuted, toggleMute } = useVideo();
+    const containerRef = useRef(null);
+    const [activeIndex, setActiveIndex] = useState(0);
+    const [selectedPost, setSelectedPost] = useState(null);
     const fetchShorts = useCallback(async (offset, limit) => {
         const res = await axios.get(`/discovery/shorts?limit=${limit}&offset=${offset}`);
 

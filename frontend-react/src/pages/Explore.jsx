@@ -7,6 +7,8 @@ import { AnimatePresence } from 'framer-motion';
 
 const Explore = () => {
     const [selectedPost, setSelectedPost] = useState(null);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [activeCategory, setActiveCategory] = useState('All');
     const location = useLocation();
 
     // Parse Query Params
