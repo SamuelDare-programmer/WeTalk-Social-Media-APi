@@ -12,6 +12,7 @@ const Explore = () => {
     const [activeCategory, setActiveCategory] = useState('All');
     const [isPlaceSearch, setIsPlaceSearch] = useState(false);
     const location = useLocation();
+    const navigate = useNavigate();
 
     const categories = ['All', 'Pictures', 'Videos', 'Places'];
 
@@ -30,7 +31,7 @@ const Explore = () => {
 
         // Dynamic Endpoint Construction
         if (isPlaceSearch && searchQuery) {
-            endpoint = `/discovery/search?q=${encodeURIComponent(searchQuery)}&type=place&limit=${limit}`;
+            endpoint = `/discovery/search?q=${encodeURIComponent(searchQuery)}&type=place&limit=${limit}&offset=${offset}`;
             // Search usually doesn't stick to strict offset unless supported. 
             // We'll trust the hook to handle what it gets.
         }
@@ -38,7 +39,7 @@ const Explore = () => {
             if (searchQuery.startsWith('#')) {
                 endpoint = `/discovery/tags/${searchQuery.replace('#', '')}?limit=${limit}&offset=${offset}`;
             } else {
-                endpoint = `/discovery/search?q=${encodeURIComponent(searchQuery)}&type=user&limit=${limit}`;
+                endpoint = `/discovery/search?q=${encodeURIComponent(searchQuery)}&type=user&limit=${limit}&offset=${offset}`;
             }
         }
         else {
