@@ -57,8 +57,14 @@ const Explore = () => {
         reset
     } = useInfiniteScroll(fetchExplore, { limit: 30 });
 
+    const isFirstRun = useRef(true);
+
     // Reset list when filters change
     useEffect(() => {
+        if (isFirstRun.current) {
+            isFirstRun.current = false;
+            return;
+        }
         reset();
     }, [searchQuery, activeCategory, reset]);
 

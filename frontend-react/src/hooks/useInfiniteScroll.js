@@ -58,6 +58,11 @@ const useInfiniteScroll = (fetchFunction, options = {}) => {
         }
     }, [fetchFunction, limit, offset, hasMore, loading, deduplicate]);
 
+    // Initial Load
+    useEffect(() => {
+        loadMore();
+    }, [loadMore]);
+
     // Utility to completely reset the list (e.g., when search query changes)
     const reset = useCallback(() => {
         setItems([]);
