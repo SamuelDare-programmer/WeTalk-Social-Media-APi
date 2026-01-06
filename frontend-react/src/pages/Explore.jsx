@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from '../api/axios';
 import { Search, Loader2 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
