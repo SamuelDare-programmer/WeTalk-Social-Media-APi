@@ -128,6 +128,7 @@ const MediaRenderer = ({ media, postId, onDoubleTap, onClick, showImmersiveIcon 
                         className="w-full h-full object-contain"
                         loop
                         playsInline
+                        autoPlay={isPlaying} // Sync internal video state with parent 'playing' state
                         onPlay={() => setIsPlaying(true)}
                         onPause={() => setIsPlaying(false)}
                         crossOrigin="anonymous"
