@@ -12,7 +12,9 @@ const Explore = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const debouncedSearchQuery = useDebounce(searchQuery, 500);
     const [activeCategory, setActiveCategory] = useState('All');
-    const [isPlaceSearch, setIsPlaceSearch] = useState(false);
+    // Derived state
+    const isPlaceSearch = activeCategory === 'Places';
+
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -32,7 +34,8 @@ const Explore = () => {
         let endpoint = `/discovery/explore?limit=${limit}&offset=${offset}`;
 
         // Dynamic Endpoint Construction using debounced value
-        if (isPlaceSearch && debouncedSearchQuery) {
+        // Note: isPlaceSearch is now derived from activeCategory in the component scope
+        if (activeCategory === 'Places' && debouncedSearchQuery) {
             endpoint = `/discovery/search?q=${encodeURIComponent(debouncedSearchQuery)}&type=place&limit=${limit}&offset=${offset}`;
         }
         else if (debouncedSearchQuery) {
@@ -54,14 +57,23 @@ const Explore = () => {
             data = data.filter(post => post.media && post.media.length > 0);
         }
         return data;
-    }, [debouncedSearchQuery, activeCategory, isPlaceSearch]);
+    }, [debouncedSearchQuery, activeCategory]); // removed isPlaceSearch from dep array as it is derived from activeCategory
+
 
     const {
         items: posts,
         loading,
         lastElementRef,
-        reset
+        reset,
+        error // Destructure error
     } = useInfiniteScroll(fetchExplore, { limit: 30 });
+
+    // DEBUG LOGS
+    useEffect(() => {
+        console.log("Explore DEBUG: query=", searchQuery, "debounced=", debouncedSearchQuery);
+        console.log("Explore DEBUG: posts count=", posts.length);
+        if (error) console.error("Explore DEBUG: Error:", error);
+    }, [searchQuery, debouncedSearchQuery, posts.length, error]);
 
     const isFirstRun = useRef(true);
 
@@ -120,7 +132,18 @@ const Explore = () => {
                     <Loader2 className="size-10 text-primary animate-spin" />
                     <p className="text-text-secondary mt-4">Curating content for you...</p>
                 </div>
-            ) : isPlaceSearch ? (
+            ) : error ? (
+                <div className="flex flex-col items-center justify-center py-20">
+                    <p className="text-red-500 font-bold mb-2">Something went wrong.</p>
+                    <p className="text-slate-500 text-sm">{error.message || "Failed to load content"}</p>
+                    <button
+                        onClick={() => reset()}
+                        className="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
+                    >
+                        Retry
+                    </button>
+                </div>
+            ) : activeCategory === 'Places' ? (
                 // Location List View
                 <div className="flex flex-col gap-2">
                     {posts.length === 0 && <p className="text-center text-slate-500 py-10">No places found.</p>}
