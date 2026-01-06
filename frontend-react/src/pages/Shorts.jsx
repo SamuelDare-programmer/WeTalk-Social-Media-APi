@@ -9,7 +9,7 @@ import PostDetailModal from '../components/PostDetailModal';
 import VideoPlayer from '../components/VideoPlayer';
 import useInfiniteScroll from '../hooks/useInfiniteScroll';
 
-const ShortCard = ({ post, mediaItem, isActive, onComment }) => {
+const ShortCard = React.memo(({ post, mediaItem, isActive, onComment }) => {
     const videoRef = useRef(null);
     // ... (rest of context hooks)
     const { isMuted, setIsMuted, toggleMute, playVideo } = useVideo();
@@ -324,7 +324,7 @@ const ShortCard = ({ post, mediaItem, isActive, onComment }) => {
             </div>
         </div>
     );
-};
+});
 
 const Shorts = () => {
     const navigate = useNavigate();
@@ -332,8 +332,10 @@ const Shorts = () => {
     const containerRef = useRef(null);
     const [activeIndex, setActiveIndex] = useState(0);
     const [selectedPost, setSelectedPost] = useState(null);
+    const seenIds = useRef(new Set());
+
     const fetchShorts = useCallback(async (offset, limit) => {
-        const res = await axios.get(`/discovery/shorts?limit=${limit}&offset=${offset}`);
+        const res = await axios.get(`/discovery/shorts?limit=${limit}&offset=${offset}&random=true&t=${Date.now()}`);
 
         // Explode Logic: Create a unique feed item for EVERY video in a post
         const explodedItems = res.data.flatMap(post => {
@@ -351,7 +353,15 @@ const Shorts = () => {
                 mediaItem: video
             }));
         });
-        return { items: explodedItems, fetchedCount: res.data.length };
+
+        // Filter duplicates to prevent key collisions and loops
+        const uniqueItems = explodedItems.filter(item => {
+            if (seenIds.current.has(item.id)) return false;
+            seenIds.current.add(item.id);
+            return true;
+        });
+
+        return { items: uniqueItems, fetchedCount: res.data.length };
     }, []);
 
     const {
