@@ -80,20 +80,16 @@ class UserService:
 
             return access_token
         
-    async def update_user(self, user_data: UserUpdateModel):
+    async def update_user(self, user_data: UserUpdateModel, current_user: User):
         try:
-            user = await self.get_user(user_data.email)
-            if not user:
-                raise UserNotFoundException()
-            
             # FIX 3: Critical - exclude unset fields to prevent data wiping
             user_data_dict = user_data.model_dump(exclude_unset=True)
 
             for k,v in user_data_dict.items():
-                setattr(user, k, v)
+                setattr(current_user, k, v)
             
-            await user.save() # .save() updates; .replace() is also fine but save is often safer for partials
-            return user
+            await current_user.save() 
+            return current_user
             
         except (ValueError, beanie.exceptions.DocumentNotFound):
             logging.error("Failed to update user")

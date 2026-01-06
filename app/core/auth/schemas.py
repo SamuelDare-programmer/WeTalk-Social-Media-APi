@@ -16,11 +16,11 @@ class UserCreateModel(BaseModel):
     is_private: bool = False
 
 class UserUpdateModel(BaseModel):
-    username: str
-    email: EmailStr
-    first_name: Optional[str]
-    middle_name: Optional[str]
-    last_name: Optional[str]
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
+    first_name: Optional[str] = None
+    middle_name: Optional[str] = None
+    last_name: Optional[str] = None
     bio: Optional[str] = None
     avatar_url: Optional[str] = None
     is_private: Optional[bool] = None

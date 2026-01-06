@@ -48,7 +48,7 @@ async def current_user(current_user= Depends(get_current_user)):
 
 @router.put("/me", response_model=UserPublicModel)
 async def update_profile(user_data :UserUpdateModel,current_user = Depends(get_current_user)):
-    updated_user = await user_service.update_user(user_data)
+    updated_user = await user_service.update_user(user_data, current_user)
     return updated_user
 
 @router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
