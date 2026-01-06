@@ -21,23 +21,35 @@ const Explore = () => {
     const categories = ['All', 'Pictures', 'Videos', 'Places'];
 
     // Parse Query Params
+    const queryParams = new URLSearchParams(location.search);
+    const urlType = queryParams.get('type');
+    const isLocationFeed = urlType === 'location';
+
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const queryParam = params.get('query');
         const catParam = params.get('cat');
         if (queryParam) setSearchQuery(queryParam);
         if (catParam && categories.includes(catParam)) setActiveCategory(catParam);
+        // If viewing a specific location feed, we don't want "Places" category active which triggers list view
+        // But we might want to keep the UI state clean. 
+        // We will handle the view switching in the render logic instead.
     }, [location.search]);
 
 
     const fetchExplore = useCallback(async (offset, limit) => {
         let endpoint = `/discovery/explore?limit=${limit}&offset=${offset}`;
 
-        // Dynamic Endpoint Construction using debounced value
-        // Note: isPlaceSearch is now derived from activeCategory in the component scope
-        if (activeCategory === 'Places' && debouncedSearchQuery) {
+        // Case 1: Specific Location Feed (Posts)
+        if (isLocationFeed && debouncedSearchQuery) {
+            endpoint = `/discovery/places/${debouncedSearchQuery}?limit=${limit}&offset=${offset}`;
+        }
+        // Case 2: Places Search (List of Places)
+        // Only trigger place search if we are NOT viewing a specific location feed
+        else if (activeCategory === 'Places' && debouncedSearchQuery) {
             endpoint = `/discovery/search?q=${encodeURIComponent(debouncedSearchQuery)}&type=place&limit=${limit}&offset=${offset}`;
         }
+        // Case 3: Standard Search (Users/Tags)
         else if (debouncedSearchQuery) {
             if (debouncedSearchQuery.startsWith('#')) {
                 endpoint = `/discovery/tags/${debouncedSearchQuery.replace('#', '')}?limit=${limit}&offset=${offset}`;
@@ -57,7 +69,7 @@ const Explore = () => {
             data = data.filter(post => post.media && post.media.length > 0);
         }
         return data;
-    }, [debouncedSearchQuery, activeCategory]); // removed isPlaceSearch from dep array as it is derived from activeCategory
+    }, [debouncedSearchQuery, activeCategory, isLocationFeed]);
 
 
     const {
@@ -143,8 +155,8 @@ const Explore = () => {
                         Retry
                     </button>
                 </div>
-            ) : activeCategory === 'Places' ? (
-                // Location List View
+            ) : (activeCategory === 'Places' && !isLocationFeed) ? (
+                // Location List View (Search Results)
                 <div className="flex flex-col gap-2">
                     {posts.length === 0 && <p className="text-center text-slate-500 py-10">No places found.</p>}
                     {posts.map((place) => (
