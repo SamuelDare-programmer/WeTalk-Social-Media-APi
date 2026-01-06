@@ -241,21 +241,16 @@ class DiscoveryService:
         blocked_user_ids.update(r.blocked_id for r in blocked_records)
 
         # ------------------------------------------------------------------
-        # Strategy: "Prioritized Mix"
-        # 1. Fetch random videos from OTHERS first.
-        # 2. If we don't hit the limit, backfill with SELF videos.
-        # 3. Shuffle everything together.
+        # Strategy: "Global Recent Videos"
+        # We replace the random sampling with deterministic sorting (created_at)
+        # to ensure pagination (offset) works correctly for infinite scroll.
         # ------------------------------------------------------------------
 
-        # --- STEP 1: Fetch OTHERS ---
-        excluded_ids_others = blocked_user_ids.copy()
-        excluded_ids_others.add(current_user_id) # Don't fetch me yet
-        
-        others_pipeline = [
-            # Filter: Not me, Not blocked
-            {"$match": {"owner_id": {"$nin": list(excluded_ids_others)}}},
+        pipeline = [
+            # Filter: Not blocked
+            {"$match": {"owner_id": {"$nin": list(blocked_user_ids)}}},
             
-            # Lookup media
+            # Lookup media to filter for videos
             {
                 "$lookup": {
                     "from": "media",
@@ -265,7 +260,7 @@ class DiscoveryService:
                 }
             },
             
-            # Filter video
+            # Filter video type
             {"$match": {
                 "$or": [
                     {"media_docs.file_type": "video"},
@@ -273,58 +268,31 @@ class DiscoveryService:
                 ]
             }},
             
-            # Randomize
-            {"$sample": {"size": limit}} 
+            # Sort Deterministically by date
+            {"$sort": {"created_at": -1}},
+            
+            # Pagination
+            {"$skip": offset},
+            {"$limit": limit}
         ]
         
-        others_result = await Post.find_many({}).aggregate(others_pipeline).to_list()
-        found_ids = [doc["_id"] for doc in others_result]
+        # Execute Aggregation
+        results = await Post.find_many({}).aggregate(pipeline).to_list()
+        found_ids = [doc["_id"] for doc in results]
         
-        # --- STEP 2: Backfill with SELF (if needed) ---
-        remaining_slots = limit - len(found_ids)
-        
-        if remaining_slots > 0:
-            self_pipeline = [
-                # Filter: ONLY me
-                {"$match": {"owner_id": current_user_id}},
-                
-                # Lookup media
-                {
-                    "$lookup": {
-                        "from": "media",
-                        "localField": "media.$id", 
-                        "foreignField": "_id",
-                        "as": "media_docs"
-                    }
-                },
-                
-                # Filter video
-                {"$match": {
-                    "$or": [
-                        {"media_docs.file_type": "video"},
-                        {"media_docs.view_link": {"$regex": "/video/upload/"}}
-                    ]
-                }},
-                
-                # Randomize my own posts too
-                {"$sample": {"size": remaining_slots}} 
-            ]
-             
-            self_result = await Post.find_many({}).aggregate(self_pipeline).to_list()
-            found_ids.extend([doc["_id"] for doc in self_result])
-
         if not found_ids:
             return []
 
-        # 3. Fetch full documents conformant with the rest of the app (relations loaded)
+        # Fetch full documents conformant with the rest of the app (relations loaded)
+        # We must maintain the sort order from the aggregation
         posts = await Post.find(
             {"_id": {"$in": found_ids}},
             fetch_links=True
         ).to_list()
         
-        # Since $sample order is lost in the $in query, we shuffle again to ensure random order
-        random.shuffle(posts)
-        
+        # Re-sort because $in does not guarantee order
+        posts.sort(key=lambda p: p.created_at, reverse=True)
+         
         return posts
 
     # Helper to process tags when a post is created (to be called by PostService ideally)

@@ -72,6 +72,12 @@ const useInfiniteScroll = (fetchFunction, options = {}) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []); // Run only on mount to trigger the first fetch. Subsequent fetches are manual or observer-triggered.
 
+    // Generic Ref pattern to decouple reset from loadMore changes
+    const loadMoreRef = useRef(loadMore);
+    useEffect(() => {
+        loadMoreRef.current = loadMore;
+    }, [loadMore]);
+
     // Utility to completely reset the list (e.g., when search query changes)
     const reset = useCallback(() => {
         setItems([]);
@@ -79,10 +85,9 @@ const useInfiniteScroll = (fetchFunction, options = {}) => {
         setHasMore(true);
         setLoading(false);
         // Important: trigger immediate reload after state reset
-        // We can do this by calling loadMore(true) but we need to ensure state is clean first
-        // actually loadMore(true) handles the atomic reset+fetch
-        loadMore(true);
-    }, [loadMore]);
+        // We use the ref to avoid this function changing when loadMore changes (e.g. loading state flips)
+        loadMoreRef.current(true);
+    }, []);
 
     // Ref for the sentinel element
     const observer = useRef();
