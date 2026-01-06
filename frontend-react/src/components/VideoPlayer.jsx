@@ -52,12 +52,24 @@ const VideoPlayer = forwardRef(({ src, fallbackSrc, poster, className, muted, lo
             video.src = src;
         }
 
+        // Critical Fix: Explicitly trigger play if autoPlay is requested.
+        // The HTML autoPlay attribute often fails when source is injected dynamically or via HLS.
+        if (autoPlay) {
+            const playPromise = video.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    // Auto-play was prevented
+                    console.warn("Auto-play prevented:", error);
+                });
+            }
+        }
+
         return () => {
             if (hlsRef.current) {
                 hlsRef.current.destroy();
             }
         };
-    }, [src, fallbackSrc]);
+    }, [src, fallbackSrc, autoPlay]);
 
     // Handle manual muted prop sync
     useEffect(() => {
