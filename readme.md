@@ -1,4 +1,4 @@
-WeTalk Project Description
+***WeTalk Project Description***  
 🚀 Project Overview
 WeTalk is a modern, feature-rich social media platform designed to foster real-time connection and content discovery. Built with a "user-first" philosophy, it combines the best elements of short-form video, ephemeral stories, and classic social networking into a single, cohesive application. Whether sharing life's moments through stories, discovering trends via shorts, or chatting with friends, WeTalk offers a premium, responsive experience.
 
@@ -39,3 +39,4 @@ The WeTalk interface is built on three core design pillars:
 Premium Aesthetics: Moving away from generic flat designs, WeTalk employs glassmorphism, subtle gradients, and a refined color palette to create a high-end feel.
 Responsiveness: A mobile-first approach ensures the application looks and performs perfectly on devices of all sizes, from large desktops to smartphones.
 Dynamic Interactivity: Every interaction provides feedback. Buttons react to clicks, pages transition smoothly, and loading states are handled gracefully, making the app feel "alive" and responsive.
+
