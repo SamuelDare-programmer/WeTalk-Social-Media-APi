@@ -4,6 +4,7 @@ import { Search, Loader2 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import PostDetailModal from '../components/PostDetailModal';
 import { AnimatePresence } from 'framer-motion';
+import useInfiniteScroll from '../hooks/useInfiniteScroll';
 
 const Explore = () => {
     const [selectedPost, setSelectedPost] = useState(null);

@@ -20,11 +20,15 @@ const useInfiniteScroll = (fetchFunction, options = {}) => {
 
         try {
             const currentOffset = reset ? 0 : offset;
-            const newItems = await fetchFunction(currentOffset, limit);
+            const currentOffset = reset ? 0 : offset;
+            const result = await fetchFunction(currentOffset, limit);
+
+            const newItems = Array.isArray(result) ? result : result.items;
+            const fetchedCount = Array.isArray(result) ? newItems.length : result.fetchedCount;
 
             if (reset) {
                 setItems(newItems);
-                setOffset(newItems.length);
+                setOffset(fetchedCount);
             } else {
                 setItems(prev => {
                     if (!deduplicate) return [...prev, ...newItems];
@@ -34,16 +38,19 @@ const useInfiniteScroll = (fetchFunction, options = {}) => {
                     const existingIds = new Set(prev.map(item => item.id || item._id));
                     const uniqueNew = newItems.filter(item => {
                         const id = item.id || item._id;
+                        // If no ID exists, fallback to allowing it (risk of dupes but better than empty)
+                        if (id === undefined || id === null) return true;
                         return !existingIds.has(id);
                     });
 
                     return [...prev, ...uniqueNew];
                 });
-                setOffset(prev => prev + newItems.length);
+                setOffset(prev => prev + fetchedCount);
             }
 
-            // If we got fewer items than limit, we reached the end
-            if (newItems.length < limit) {
+            // If we got fewer items than limit (based on source fetch), we reached the end
+            // We use fetchedCount because that represents the backend pagination unit
+            if (fetchedCount < limit) {
                 setHasMore(false);
             } else {
                 setHasMore(true);

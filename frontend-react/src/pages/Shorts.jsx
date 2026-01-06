@@ -345,12 +345,13 @@ const Shorts = () => {
             ) || [];
 
             return videos.map((video, idx) => ({
+                id: `${post.id || post._id}_${video.media_id || video._id || idx}`, // Standard ID for dedupe
                 _feedId: `${post.id || post._id}_${video.media_id || video._id || idx}`,
                 post: post,
                 mediaItem: video
             }));
         });
-        return explodedItems;
+        return { items: explodedItems, fetchedCount: res.data.length };
     }, []);
 
     const {
