@@ -35,7 +35,7 @@ async def _update_media_status(media_id: str, public_id: str, view_link: str):
         media.view_link = view_link
         media.status = MediaStatus.ACTIVE
         await media.save()
-     await client.close()
+    await client.close()
 
 @c_app.task()
 def send_email(recipients: List[EmailStr], subject: str, template_body: dict, template_name):
