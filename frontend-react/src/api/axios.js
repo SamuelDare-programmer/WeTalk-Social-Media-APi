@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'https://considerable-cathrin-wetalk-0d4f7320.koyeb.app/api/v1';
+const BASE_URL = 'intermediate-ottilie-wetalkreal-d24e5c5e.koyeb.app/';
 
 const api = axios.create({
     baseURL: BASE_URL,
